@@ -39,7 +39,7 @@ export function CareSymbolCard({ symbol, attempt, onChoose }: CareSymbolCardProp
   }
 
   return (
-    <article className="care-symbol-card" aria-labelledby={`symbol-card-title-${symbol.id}`}>
+    <article className="care-symbol-card" data-symbol-id={symbol.id} aria-labelledby={`symbol-card-title-${symbol.id}`}>
       <div className="symbol-card-heading">
         <p className="eyebrow">현재 살펴볼 표시</p>
         <h2 id={`symbol-card-title-${symbol.id}`}>{symbol.name}</h2>

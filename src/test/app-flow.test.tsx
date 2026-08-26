@@ -433,3 +433,16 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     expect(screen.getByRole('img', { name: valid.accessibleDescription })).toBeInTheDocument();
   });
 });
+
+describe('Task 9 접근 가능한 관리 순서판', () => {
+  it('필수 행동 두 개에만 gi-pulse를 적용한다', () => {
+    const request = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'request' });
+    expect([...document.querySelectorAll('.gi-pulse')].map((node) => node.textContent?.trim()))
+      .toEqual(['표시 확대']);
+    request.unmount();
+
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
+    expect([...document.querySelectorAll('.gi-pulse')].map((node) => node.textContent?.trim()))
+      .toEqual(['관리 계획 확인']);
+  });
+});

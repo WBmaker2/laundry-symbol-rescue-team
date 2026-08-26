@@ -7,6 +7,9 @@ import { useLearnerSession } from './useLearnerSession';
 import { missionById } from '../content/missions';
 import type { SessionStep } from '../domain/sessionReducer';
 import { SymbolMagnifierScreen } from '../features/magnifier/SymbolMagnifierScreen';
+import { ManagementBoardScreen } from '../features/plan/ManagementBoardScreen';
+import './app-shell.css';
+import '../styles/motion.css';
 
 function FutureStepPlaceholder({ step, title, reportReady }: { step: Exclude<SessionStep, 'request'>; title: string; reportReady?: boolean }) {
   return (
@@ -48,7 +51,19 @@ function StepContent({ step }: { step: SessionStep }) {
         />
       );
     }
-    case 'plan': return <FutureStepPlaceholder step={step} title="관리 순서판" />;
+    case 'plan': {
+      if (state.missionId === null) throw new Error('관리 순서판을 열 미션이 없습니다.');
+      const mission = missionById.get(state.missionId);
+      if (!mission) throw new Error('관리 순서판의 미션을 찾을 수 없습니다.');
+      return (
+        <ManagementBoardScreen
+          mission={mission}
+          onSubmit={(plan, evaluation, groupingEvaluation) => dispatch({
+            type: 'SUBMIT_INITIAL_PLAN', plan, evaluation, groupingEvaluation,
+          })}
+        />
+      );
+    }
     case 'forecast': return <FutureStepPlaceholder step={step} title="손상 예보" />;
     case 'simulation': return <FutureStepPlaceholder step={step} title="가상 관리" />;
     case 'revision': return <FutureStepPlaceholder step={step} title="계획 수정" />;

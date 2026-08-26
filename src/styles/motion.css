@@ -1,0 +1,13 @@
+@keyframes gi-pulse {
+  0%,
+  100% { box-shadow: 0 0 0 0 rgb(231 120 85 / 0%); }
+  50% { box-shadow: 0 0 0 0.45rem rgb(231 120 85 / 24%); }
+}
+
+.gi-pulse {
+  animation: gi-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-pulse { animation: none; }
+}

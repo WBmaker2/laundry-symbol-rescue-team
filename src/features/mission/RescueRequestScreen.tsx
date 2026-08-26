@@ -1,6 +1,7 @@
 import type { GarmentMission } from '../../domain/missionTypes';
 import type { ReactNode } from 'react';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
+import { ActionButton } from '../../components/ui/ActionButton';
 
 type IllustrationKind = 'shirt' | 'scarf' | 'sportswear' | 'decorated-top';
 
@@ -58,9 +59,9 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
       <p className="learning-boundary"><strong>학습 범위:</strong> 이 화면의 옷과 재료는 실제 측정값이 아닌 가상 학습 자료예요.</p>
       <p className="opening-prompt"><strong>이번 질문:</strong> {mission.openingPrompt}</p>
       <SafetyNotice />
-      <button type="button" className="required-action gi-pulse primary-action" onClick={onOpenMagnifier}>
+      <ActionButton type="button" className="primary-action" emphasis="required" onClick={onOpenMagnifier}>
         표시 확대
-      </button>
+      </ActionButton>
     </section>
   );
 }

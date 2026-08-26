@@ -30,7 +30,7 @@ export function SymbolFigure({
     );
   }
   return (
-    <div className={`symbol-figure${expanded ? ' symbol-figure-expanded' : ''}`}>
+    <div className={`symbol-figure${expanded ? ' symbol-figure-expanded' : ''}`} data-symbol-id={symbol.id}>
       <img
         className={`symbol-image${expanded ? ' symbol-image-expanded' : ''}`}
         src={assetUrl(symbol.assetPath)}
