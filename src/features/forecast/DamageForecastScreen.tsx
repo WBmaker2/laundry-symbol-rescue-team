@@ -4,6 +4,9 @@ import type { GarmentMission } from '../../domain/missionTypes';
 import { evaluatePrediction, type PredictionFeedback, type PredictionSelection } from '../../domain/evaluatePrediction';
 import type { PlanEvaluation } from '../../domain/evaluationTypes';
 import { careSymbolById } from '../../content/symbols';
+import { missionById } from '../../content/missions';
+import { validatePublishedSymbolCatalog } from '../../content/validateSymbolCatalog';
+import { validateMissionCatalog } from '../../content/validateMissionCatalog';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { SymbolFigure } from '../../components/ui/SymbolFigure';
 import { RiskCard } from './RiskCard';
@@ -20,10 +23,21 @@ function sameIds(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((id) => right.includes(id));
 }
 
-function missionSymbols(mission: GarmentMission): readonly CareSymbol[] {
+function missionSymbols(mission: GarmentMission): readonly CareSymbol[] | null {
   const candidates: readonly (CareSymbol | undefined)[] = unique(mission.garments.flatMap(({ symbolIds }) => symbolIds))
-    .map((symbolId) => careSymbolById.get(symbolId))
-  return candidates.filter((symbol): symbol is CareSymbol => symbol !== undefined);
+    .map((symbolId) => careSymbolById.get(symbolId));
+  if (candidates.some((symbol) => symbol === undefined)) return null;
+  return candidates as readonly CareSymbol[];
+}
+
+function CatalogError() {
+  return (
+    <section className="magnifier-error" role="alert" aria-labelledby="forecast-error-title">
+      <h2 id="forecast-error-title">표시 자료를 불러올 수 없어요</h2>
+      <p>이 미션의 표시 자료가 완전하지 않아 손상 예보를 안전하게 시작할 수 없어요.</p>
+      <p>표시를 건너뛰지 않고, 보호자·교사에게 자료를 확인해 달라고 요청해 주세요.</p>
+    </section>
+  );
 }
 
 function evidenceLabel(symbol: CareSymbol): string {
@@ -59,6 +73,9 @@ export function DamageForecastScreen({
   onShowSimulation,
 }: DamageForecastScreenProps) {
   const symbols = missionSymbols(mission);
+  const catalogIsValid = validatePublishedSymbolCatalog(careSymbolById)
+    && validateMissionCatalog(missionById, careSymbolById);
+  const availableSymbols = symbols ?? [];
   const [selectedRisks, setSelectedRisks] = useState<DamageRiskId[]>(() => [...(prediction?.riskIds ?? [])]);
   const [selectedReasons, setSelectedReasons] = useState<CareSymbolId[]>(() => [...(prediction?.reasonSymbolIds ?? [])]);
   const [selectionMessage, setSelectionMessage] = useState<string | null>(null);
@@ -77,8 +94,8 @@ export function DamageForecastScreen({
   const reviewSymbolIds = feedback === null ? [] : unique([
     ...feedback.unsupportedReasonSymbolIds,
     ...feedback.missedReasonSymbolIds,
-  ]).filter((symbolId) => symbols.some((symbol) => symbol.id === symbolId));
-  const openSymbol = openSymbolId === null ? undefined : symbols.find((symbol) => symbol.id === openSymbolId);
+  ]).filter((symbolId) => availableSymbols.some((symbol) => symbol.id === symbolId));
+  const openSymbol = openSymbolId === null ? undefined : availableSymbols.find((symbol) => symbol.id === openSymbolId);
 
   useEffect(() => {
     if (openSymbol && dialogRef.current) {
@@ -125,6 +142,8 @@ export function DamageForecastScreen({
     lastReviewTrigger.current?.focus();
   }
 
+  if (!catalogIsValid || !symbols) return <CatalogError />;
+
   return (
     <section className="forecast-screen" data-app-step="forecast" aria-labelledby="forecast-title">
       <p className="eyebrow">네 번째 단계</p>
@@ -132,8 +151,9 @@ export function DamageForecastScreen({
       <p>처음 세운 관리 계획을 보고, 생길 수 있는 변화를 위험이 아닌 가능성으로 골라 봐요.</p>
       <p className="learning-boundary">확률이나 실제 손상 사진은 사용하지 않아요. 표시와 가상 계획을 연결해 상대적으로 살펴봅니다.</p>
 
-      <fieldset className="risk-card-grid">
-        <legend>가능한 변화를 하나 이상 선택</legend>
+      <fieldset className="risk-card-grid" aria-describedby="risk-selection-description">
+        <legend>손상 가능성</legend>
+        <p id="risk-selection-description">가능한 변화를 하나 이상 선택해요.</p>
         {riskIds.map((riskId) => (
           <RiskCard
             key={riskId}
@@ -144,8 +164,9 @@ export function DamageForecastScreen({
         ))}
       </fieldset>
 
-      <fieldset className="evidence-list">
-        <legend>관련 표시를 근거로 하나 이상 선택</legend>
+      <fieldset className="evidence-list" aria-describedby="evidence-selection-description">
+        <legend>근거 표시</legend>
+        <p id="evidence-selection-description">관련 표시를 근거로 하나 이상 선택해요.</p>
         <p>선택한 표시는 왜 그렇게 생각했는지 보여 주는 근거예요.</p>
         {symbols.map((symbol) => {
           const label = `${evidenceLabel(symbol)}를 근거로 선택 — ${symbol.name}`;
@@ -196,7 +217,15 @@ export function DamageForecastScreen({
       )}
 
       {openSymbol && (
-        <div className="symbol-review-dialog" role="dialog" aria-modal="true" aria-labelledby="symbol-review-title" tabIndex={-1} ref={dialogRef}>
+        <div
+          className="symbol-review-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="symbol-review-title"
+          tabIndex={-1}
+          ref={dialogRef}
+          onKeyDown={(event) => { if (event.key === 'Escape') closeReview(); }}
+        >
           <div className="symbol-review-dialog-card" data-symbol-id={openSymbol.id}>
             <p className="eyebrow">관련 표시 확대경</p>
             <h3 id="symbol-review-title">{openSymbol.name} 다시 확인</h3>

@@ -82,7 +82,9 @@ function parseSelection(selection: unknown): ParsedSelection {
   const riskValues = Array.isArray(rawRisks) ? uniqueStrings(rawRisks) : [];
   const reasonValues = Array.isArray(rawReasons) ? uniqueStrings(rawReasons) : [];
   return {
-    valid: rawRisks.every((value) => typeof value === 'string')
+    valid: riskValues.length > 0
+      && reasonValues.length > 0
+      && rawRisks.every((value) => typeof value === 'string')
       && rawReasons.every((value) => typeof value === 'string')
       && riskValues.every(isRiskId)
       && reasonValues.every(isSymbolId),

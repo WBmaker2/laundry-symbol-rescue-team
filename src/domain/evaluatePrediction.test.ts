@@ -77,7 +77,7 @@ describe('evaluatePrediction', () => {
       },
       selection: {
         riskIds: ['deformation', 'heat-damage', 'shrinkage', 'deformation'],
-        reasonSymbolIds: [],
+        reasonSymbolIds: ['care-no-tumble'],
       },
     });
 
@@ -184,6 +184,18 @@ describe('evaluatePrediction', () => {
     expect(result.missedRiskIds).toEqual([]);
     expect(result.supportedReasonSymbolIds).toEqual([]);
     expect(result.missedReasonSymbolIds).toEqual([]);
+    expect(result.message).toMatch(/선택/);
+  });
+
+  it.each([
+    ['empty risk IDs', { riskIds: [], reasonSymbolIds: ['care-no-iron'] }],
+    ['empty reason IDs', { riskIds: ['heat-damage'], reasonSymbolIds: [] }],
+    ['both arrays empty', { riskIds: [], reasonSymbolIds: [] }],
+  ] as const)('rejects %s even when both selection fields are arrays', (_label, selection) => {
+    const result = evaluatePrediction({ evaluation: evidenceEvaluation, selection });
+    expect(result.selectionIsValid).toBe(false);
+    expect(result.invalidRiskIds).toEqual([]);
+    expect(result.invalidReasonSymbolIds).toEqual([]);
     expect(result.message).toMatch(/선택/);
   });
 
