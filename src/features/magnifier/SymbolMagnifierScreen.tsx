@@ -4,6 +4,7 @@ import type { CareSymbol } from '../../domain/careTypes';
 import type { InterpretationFeedback } from '../../domain/evaluationTypes';
 import type { SymbolInterpretationAttempt } from '../../domain/sessionReducer';
 import { careSymbolById } from '../../content/symbols';
+import { validatePublishedSymbolCatalog } from '../../content/validateSymbolCatalog';
 import { CareSymbolCard } from './CareSymbolCard';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 
@@ -14,24 +15,6 @@ const glossaryTerms = [
   ['학습용 재료 모형', '실제 옷의 성능을 재는 자료가 아니라 수업을 위한 가상 재료예요.'],
 ] as const;
 
-function isCatalogSymbol(value: unknown): value is CareSymbol {
-  if (!value || typeof value !== 'object') return false;
-  const symbol = value as Partial<CareSymbol>;
-  return typeof symbol.id === 'string'
-    && typeof symbol.name === 'string'
-    && typeof symbol.categoryHint === 'string'
-    && typeof symbol.shortDescription === 'string'
-    && typeof symbol.accessibleDescription === 'string'
-    && typeof symbol.assetPath === 'string'
-    && symbol.assetPath.startsWith('/symbols/')
-    && (symbol.displayKind === 'official-standard-symbol' || symbol.displayKind === 'learning-icon')
-    && Array.isArray(symbol.meaningOptions)
-    && symbol.meaningOptions.length > 0
-    && typeof symbol.correctMeaningOptionId === 'string'
-    && symbol.meaningOptions.some((option) => option?.id === symbol.correctMeaningOptionId)
-    && symbol.meaningOptions.every((option) => option && typeof option.id === 'string' && typeof option.label === 'string');
-}
-
 function missionSymbols(mission: GarmentMission): readonly CareSymbol[] | null {
   if (!mission || !Array.isArray(mission.garments) || mission.garments.length === 0) return null;
   const ids: string[] = [];
@@ -40,7 +23,7 @@ function missionSymbols(mission: GarmentMission): readonly CareSymbol[] | null {
     for (const id of garment.symbolIds) if (!ids.includes(id)) ids.push(id);
   }
   const symbols = ids.map((id) => careSymbolById.get(id as CareSymbol['id']));
-  if (symbols.length === 0 || symbols.some((symbol) => !isCatalogSymbol(symbol))) return null;
+  if (symbols.length === 0 || symbols.some((symbol) => symbol === undefined)) return null;
   return symbols as readonly CareSymbol[];
 }
 
@@ -64,6 +47,7 @@ export function SymbolMagnifierScreen({
   onChoose: (attempt: SymbolInterpretationAttempt) => void;
 }) {
   const [lastCorrectFeedback, setLastCorrectFeedback] = useState<InterpretationFeedback | null>(null);
+  if (!validatePublishedSymbolCatalog(careSymbolById)) return <CatalogError />;
   const symbols = missionSymbols(mission);
   if (!symbols) return <CatalogError />;
 

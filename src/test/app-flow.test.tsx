@@ -7,6 +7,7 @@ import { buildLearnerSessionAtStep, renderAppAtStep } from './renderApp';
 import { missions } from '../content/missions';
 import { planningStages } from './factories';
 import { careSymbolById } from '../content/symbols';
+import type { CareSymbol } from '../domain/careTypes';
 
 describe('Task 7 앱 시작 흐름', () => {
   afterEach(() => cleanup());
@@ -262,5 +263,37 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     } finally {
       if (original) careSymbolById.set('care-wash-30-gentle', original);
     }
+  });
+
+  it.each([
+    ['빈 accessibleDescription', (symbol: CareSymbol) => ({ ...symbol, accessibleDescription: ' ' })],
+    ['중복 meaning options', (symbol: CareSymbol) => ({
+      ...symbol,
+      meaningOptions: [symbol.meaningOptions[0], symbol.meaningOptions[0], symbol.meaningOptions[2]],
+    })],
+    ['공식 표시 provenance', (symbol: CareSymbol) => ({ ...symbol, displayKind: 'official-standard-symbol' as const })],
+    ['key/id 불일치', (symbol: CareSymbol) => ({ ...symbol, id: 'care-no-iron' as CareSymbol['id'] })],
+    ['경로 traversal', (symbol: CareSymbol) => ({ ...symbol, assetPath: '/symbols/../care-wash-30-gentle.svg' as CareSymbol['assetPath'] })],
+    ['encoded traversal', (symbol: CareSymbol) => ({ ...symbol, assetPath: '/symbols/%2e%2e/care-wash-30-gentle.svg' as CareSymbol['assetPath'] })],
+    ['query 경로', (symbol: CareSymbol) => ({ ...symbol, assetPath: '/symbols/care-wash-30-gentle.svg?raw=1' as CareSymbol['assetPath'] })],
+    ['fragment 경로', (symbol: CareSymbol) => ({ ...symbol, assetPath: '/symbols/care-wash-30-gentle.svg#icon' as CareSymbol['assetPath'] })],
+  ])('변조한 %s catalog는 fail-closed 오류 화면으로 멈춘다', (_label, mutate) => {
+    const symbolId = 'care-wash-30-gentle';
+    const original = careSymbolById.get(symbolId)! as CareSymbol;
+    const symbolCatalog = careSymbolById as unknown as Map<string, unknown>;
+    try {
+      const mutateSymbol = mutate as unknown as (symbol: CareSymbol) => CareSymbol;
+      symbolCatalog.set(symbolId, mutateSymbol(original));
+      renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
+      expect(screen.getByRole('alert')).toHaveTextContent(/표시 자료를 불러올 수 없어요/);
+      expect(screen.queryByRole('img')).toBeNull();
+    } finally {
+      symbolCatalog.set(symbolId, original);
+    }
+  });
+
+  it('catalog 검증을 통과한 정상 Map은 기존 표시 경로로 렌더링된다', () => {
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
+    expect(screen.getByRole('img', { name: /세탁통 안에 30/ })).toBeInTheDocument();
   });
 });
