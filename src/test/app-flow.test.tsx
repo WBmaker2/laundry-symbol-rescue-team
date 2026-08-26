@@ -6,8 +6,11 @@ import { App } from '../App';
 import { buildLearnerSessionAtStep, renderAppAtStep } from './renderApp';
 import { missions } from '../content/missions';
 import { planningStages } from './factories';
-import { careSymbolById } from '../content/symbols';
+import { careSymbolById, careSymbols } from '../content/symbols';
 import type { CareSymbol } from '../domain/careTypes';
+import { missionById } from '../content/missions';
+import type { GarmentMission, VirtualGarment } from '../domain/missionTypes';
+import { SymbolFigure } from '../components/ui/SymbolFigure';
 
 describe('Task 7 앱 시작 흐름', () => {
   afterEach(() => cleanup());
@@ -295,5 +298,95 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
   it('catalog 검증을 통과한 정상 Map은 기존 표시 경로로 렌더링된다', () => {
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
     expect(screen.getByRole('img', { name: /세탁통 안에 30/ })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['mission id', (mission: GarmentMission) => ({ ...mission, id: 'soft-scarf' as GarmentMission['id'] })],
+    ['mission order', (mission: GarmentMission) => ({ ...mission, order: 99 as GarmentMission['order'] })],
+    ['title', (mission: GarmentMission) => ({ ...mission, title: ' ' })],
+    ['learning focus', (mission: GarmentMission) => ({ ...mission, learningFocus: '' })],
+    ['opening prompt', (mission: GarmentMission) => ({ ...mission, openingPrompt: '' })],
+    ['requiresGrouping', (mission: GarmentMission) => ({ ...mission, requiresGrouping: 'yes' as unknown as boolean })],
+    ['garments list', (mission: GarmentMission) => ({ ...mission, garments: [] })],
+    ['garment name', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{ ...mission.garments[0], name: ' ' } as VirtualGarment],
+    })],
+    ['garment id', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{ ...mission.garments[0], id: ' ' } as VirtualGarment],
+    })],
+    ['material model', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{ ...mission.garments[0], materialModel: ' ' } as VirtualGarment],
+    })],
+    ['material boundary', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{ ...mission.garments[0], materialBoundary: '' } as VirtualGarment],
+    })],
+    ['stain description', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{ ...mission.garments[0], contaminationScenario: '' } as VirtualGarment],
+    })],
+    ['symbol ids', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{ ...mission.garments[0], symbolIds: [] } as VirtualGarment],
+    })],
+    ['material options', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{
+        ...mission.garments[0],
+        materialAllowedOptionIdsByStage: { ...mission.garments[0]?.materialAllowedOptionIdsByStage, wash: [] },
+      } as unknown as VirtualGarment],
+    })],
+    ['material option string', (mission: GarmentMission) => ({
+      ...mission,
+      garments: [{
+        ...mission.garments[0],
+        materialAllowedOptionIdsByStage: { ...mission.garments[0]?.materialAllowedOptionIdsByStage, wash: [' '] },
+      } as unknown as VirtualGarment],
+    })],
+  ])('변조한 %s mission은 fail-closed 오류 화면으로 멈춘다', (_label, mutate) => {
+    const missionId = 'basic-t-shirt';
+    const missionCatalog = missionById as unknown as Map<string, unknown>;
+    const original = missionCatalog.get(missionId) as GarmentMission;
+    try {
+      const mutateMission = mutate as unknown as (mission: GarmentMission) => GarmentMission;
+      missionCatalog.set(missionId, mutateMission(original));
+      renderAppAtStep({ missionId, step: 'magnifier' });
+      expect(screen.getByRole('alert')).toHaveTextContent(/표시 자료를 불러올 수 없어요/);
+      expect(screen.queryByRole('button', { name: '뜻 확인' })).toBeNull();
+    } finally {
+      missionCatalog.set(missionId, original);
+    }
+  });
+
+  it('mission Map key와 mission.id가 다르면 표시 활동을 시작하지 않는다', () => {
+    const missionId = 'basic-t-shirt';
+    const missionCatalog = missionById as unknown as Map<string, unknown>;
+    const original = missionCatalog.get(missionId) as GarmentMission;
+    try {
+      missionCatalog.set(missionId, { ...original, id: 'soft-scarf' });
+      renderAppAtStep({ missionId, step: 'magnifier' });
+      expect(screen.getByRole('alert')).toHaveTextContent(/표시 자료를 불러올 수 없어요/);
+    } finally {
+      missionCatalog.set(missionId, original);
+    }
+  });
+
+  it('SymbolFigure는 빈 alt·설명과 잘못된 display kind·provenance에서 img를 렌더하지 않는다', () => {
+    const valid = careSymbols[0]!;
+    const { rerender } = render(<SymbolFigure symbol={{ ...valid, accessibleDescription: ' ' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, displayKind: 'official-standard-symbol' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, shortDescription: ' ' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, sourceIds: [] }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ import type {
   RelativeLevel,
 } from './careTypes';
 import type { CareOption, GarmentMission, StudentPlan } from './missionTypes';
+import { validateGarmentShape, validateMissionShape } from './validateMissionInput';
 
 export interface PlanEvaluationInput {
   mission: GarmentMission;
@@ -36,8 +37,6 @@ const damageRiskIds: readonly DamageRiskId[] = [
   'heat-damage',
 ];
 const displayKinds = ['official-standard-symbol', 'learning-icon'] as const;
-const missionIds = ['basic-t-shirt', 'soft-scarf', 'sportswear', 'decorated-top', 'mixed-load'] as const;
-const missionOrders = [1, 2, 3, 4, 5] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -152,26 +151,6 @@ function symbolReferenceIssue(symbolId: unknown, symbols: ReadonlyMap<string, un
   return null;
 }
 
-function missionShapeIssue(mission: unknown): string | null {
-  if (!isRecord(mission) || !missionIds.includes(mission.id as typeof missionIds[number])) {
-    return '미션 ID가 올바르지 않아요.';
-  }
-  if (!missionOrders.includes(mission.order as typeof missionOrders[number])) return '미션 순서가 올바르지 않아요.';
-  if (!nonEmptyString(mission.title) || !nonEmptyString(mission.learningFocus)
-    || !nonEmptyString(mission.openingPrompt)) return '미션 설명이 올바르지 않아요.';
-  if (typeof mission.requiresGrouping !== 'boolean') return '미션의 그룹 단계 표시가 올바르지 않아요.';
-  return null;
-}
-
-function garmentShapeIssue(garment: unknown): string | null {
-  if (!isRecord(garment) || !nonEmptyString(garment.id) || !nonEmptyString(garment.name)
-    || !nonEmptyString(garment.materialModel) || !nonEmptyString(garment.materialBoundary)
-    || !nonEmptyString(garment.contaminationScenario)) {
-    return '미션 의류의 설명·재료 경계가 올바르지 않아요.';
-  }
-  return null;
-}
-
 function validateMapCatalogs(
   symbols: ReadonlyMap<string, unknown>,
   options: ReadonlyMap<string, unknown>,
@@ -208,7 +187,7 @@ export function validatePlanInput(input: unknown): PlanInputValidationResult {
 
   const mission = candidate.mission;
   const plan = candidate.plan;
-  const missionIssue = missionShapeIssue(mission);
+  const missionIssue = validateMissionShape(mission);
   if (missionIssue !== null || !isRecord(mission) || !Array.isArray(mission.garments)) {
     return { valid: false, message: missionIssue ?? '미션 ID 또는 의류 목록이 올바르지 않아요.' };
   }
@@ -219,7 +198,7 @@ export function validatePlanInput(input: unknown): PlanInputValidationResult {
 
   const missionGarmentIds: string[] = [];
   for (const garment of mission.garments) {
-    const garmentIssue = garmentShapeIssue(garment);
+    const garmentIssue = validateGarmentShape(garment);
     if (garmentIssue !== null || !isRecord(garment)) return { valid: false, message: garmentIssue ?? '미션 의류가 올바르지 않아요.' };
     missionGarmentIds.push(garment.id as string);
   }

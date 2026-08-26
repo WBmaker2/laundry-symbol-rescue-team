@@ -4,7 +4,9 @@ import type { CareSymbol } from '../../domain/careTypes';
 import type { InterpretationFeedback } from '../../domain/evaluationTypes';
 import type { SymbolInterpretationAttempt } from '../../domain/sessionReducer';
 import { careSymbolById } from '../../content/symbols';
+import { missionById } from '../../content/missions';
 import { validatePublishedSymbolCatalog } from '../../content/validateSymbolCatalog';
+import { validateMissionCatalog } from '../../content/validateMissionCatalog';
 import { CareSymbolCard } from './CareSymbolCard';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 
@@ -47,7 +49,8 @@ export function SymbolMagnifierScreen({
   onChoose: (attempt: SymbolInterpretationAttempt) => void;
 }) {
   const [lastCorrectFeedback, setLastCorrectFeedback] = useState<InterpretationFeedback | null>(null);
-  if (!validatePublishedSymbolCatalog(careSymbolById)) return <CatalogError />;
+  if (!validatePublishedSymbolCatalog(careSymbolById)
+    || !validateMissionCatalog(missionById, careSymbolById)) return <CatalogError />;
   const symbols = missionSymbols(mission);
   if (!symbols) return <CatalogError />;
 

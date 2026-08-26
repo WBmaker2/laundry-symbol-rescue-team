@@ -1329,13 +1329,18 @@ flowchart LR
 - Create: `src/components/ui/SymbolFigure.tsx`
 - Create: `src/features/magnifier/CareSymbolCard.tsx`
 - Create: `src/features/magnifier/SymbolMagnifierScreen.tsx`
+- Create: `src/content/validateSymbolCatalog.ts`
+- Create: `src/content/validateMissionCatalog.ts`
+- Create: `src/domain/validateMissionInput.ts`
+- Modify: `src/domain/validatePlanInput.ts` (shared mission/garment contract)
 - Modify: `src/app/AppShell.tsx`
 - Modify: `src/styles/layout.css` (controller ruling: Task 8 component layout and high-contrast presentation)
 - Modify: `src/test/app-flow.test.tsx`
 - Create: `src/vite-env.d.ts` (Vite `BASE_URL` typing for Pages-safe symbol assets)
 
 **Interfaces:**
-- Consumes: `CareSymbol`, `evaluateInterpretation()`, `RECORD_INTERPRETATION`, `careSymbolById`.
+- Consumes: `CareSymbol`, `evaluateInterpretation()`, `RECORD_INTERPRETATION`, `careSymbolById`, `missionById`.
+- Validation boundary: `validatePublishedSymbolCatalog()` checks the complete published symbol contract and exact `/symbols/{id}.svg` asset path; `validateMissionCatalog()` checks the canonical five-mission Map, key/ID agreement, full mission/garment fields, and symbol/material-option references. Both the screen and `SymbolFigure` fail closed before rendering unsafe or incomplete content. `validateMissionShape()` and `validateGarmentShape()` are shared with `validatePlanInput()`.
 - Produces: `SymbolFigure({ symbol, expanded })`, `CareSymbolCard({ symbol, attempt, onChoose })`, `SymbolMagnifierScreen`.
 
 - [ ] **Step 1: 문자 설명·뜻 후보·확대 보기의 실패 테스트를 작성한다**
@@ -1380,7 +1385,7 @@ flowchart LR
 - [ ] **Step 6: 표시 확대경 커밋을 만든다**
 
   ```bash
-  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
+  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/content/validateSymbolCatalog.ts src/content/validateMissionCatalog.ts src/domain/validateMissionInput.ts src/domain/validatePlanInput.ts src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
   git commit -m "feat: add accessible symbol interpretation"
   ```
 

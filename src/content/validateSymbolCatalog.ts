@@ -8,6 +8,7 @@ const riskIds: readonly DamageRiskId[] = [
   'shrinkage', 'deformation', 'color-change', 'decoration-damage', 'heat-damage',
 ];
 const riskIdSet = new Set(riskIds);
+const sourceIdSet = new Set<string>(sources.map(({ id }) => id));
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -34,6 +35,11 @@ function hasCompleteSymbolShape(key: string, value: unknown): value is CareSymbo
     || !Array.isArray(value.sourceIds)
     || value.sourceIds.length === 0
     || value.sourceIds.some((id) => !nonEmptyString(id))
+    || value.sourceIds.some((id) => !sourceIdSet.has(id as string))
+    || value.sourceIds.length !== new Set(value.sourceIds).size
+    || !value.sourceIds.includes('iso-3758-2023')
+    || !value.sourceIds.some((id) => id === 'ks-k-0021-2024'
+      || id === 'katri-care-label-cardnews' || id === 'katri-iso-3758-press')
     || !nonEmptyString(value.reviewedAt)
     || !Array.isArray(value.meaningOptions)
     || value.meaningOptions.length !== 3
@@ -52,6 +58,10 @@ function hasCompleteSymbolShape(key: string, value: unknown): value is CareSymbo
     return false;
   }
   return true;
+}
+
+export function isRenderableSymbol(value: unknown): value is CareSymbol {
+  return isRecord(value) && typeof value.id === 'string' && hasCompleteSymbolShape(value.id, value);
 }
 
 export function validatePublishedSymbolCatalog(symbolMap: ReadonlyMap<string, unknown>): boolean {

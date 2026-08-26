@@ -1,6 +1,6 @@
 import type { CareSymbol } from '../../domain/careTypes';
 import type { RefObject } from 'react';
-import { isSafeSymbolAssetPath } from '../../content/validateSymbolCatalog';
+import { isRenderableSymbol } from '../../content/validateSymbolCatalog';
 
 const displayKindLabels: Record<CareSymbol['displayKind'], string> = {
   'official-standard-symbol': '공식 취급 표시',
@@ -22,7 +22,7 @@ export function SymbolFigure({
   expanded: boolean;
   descriptionRef?: RefObject<HTMLParagraphElement | null> | undefined;
 }) {
-  if (!isSafeSymbolAssetPath(symbol.id, symbol.assetPath)) {
+  if (!isRenderableSymbol(symbol)) {
     return (
       <div className="symbol-figure" role="alert">
         <p>표시 이미지를 안전하게 불러올 수 없어요.</p>
