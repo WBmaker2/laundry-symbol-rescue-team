@@ -46,6 +46,14 @@ function isSymbolId(value: unknown): value is CareSymbolId {
   return typeof value === 'string' && symbolIds.includes(value as CareSymbolId);
 }
 
+function isDenseArray(value: unknown): value is readonly unknown[] {
+  if (!Array.isArray(value)) return false;
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) return false;
+  }
+  return true;
+}
+
 function uniqueStrings(values: readonly unknown[]): readonly string[] {
   return [...new Set(values.filter((value): value is string => typeof value === 'string'))];
 }
@@ -68,7 +76,7 @@ function parseSelection(selection: unknown): ParsedSelection {
   }
   const rawRisks = (selection as { riskIds?: unknown }).riskIds;
   const rawReasons = (selection as { reasonSymbolIds?: unknown }).reasonSymbolIds;
-  if (!Array.isArray(rawRisks) || !Array.isArray(rawReasons)) {
+  if (!isDenseArray(rawRisks) || !isDenseArray(rawReasons)) {
     return { valid: false, risks: [], invalidRisks: [], reasons: [], invalidReasons: [] };
   }
   const riskValues = Array.isArray(rawRisks) ? uniqueStrings(rawRisks) : [];
@@ -92,7 +100,7 @@ interface Evidence {
 }
 
 function validEvidenceList<T>(value: unknown, predicate: (value: unknown) => value is T): value is readonly T[] {
-  return Array.isArray(value) && value.every(predicate);
+  return isDenseArray(value) && value.every(predicate);
 }
 
 function readEvidence(evaluation: unknown): Evidence {

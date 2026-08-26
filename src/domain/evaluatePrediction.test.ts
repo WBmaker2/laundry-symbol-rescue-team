@@ -187,6 +187,47 @@ describe('evaluatePrediction', () => {
     expect(result.message).toMatch(/선택/);
   });
 
+  it.each([
+    ['sparse risk selection', { riskIds: Object.assign(new Array(1), { 0: 'heat-damage' }), reasonSymbolIds: [] }],
+    ['sparse reason selection', { riskIds: [], reasonSymbolIds: Object.assign(new Array(1), { 0: 'care-no-iron' }) }],
+  ] as const)('rejects a %s as an invalid selection', (_label, selection) => {
+    delete (selection.riskIds as unknown[])[0];
+    delete (selection.reasonSymbolIds as unknown[])[0];
+    const result = evaluatePrediction({
+      evaluation: evidenceEvaluation,
+      selection: selection as never,
+    });
+
+    expect(result.selectionIsValid).toBe(false);
+    expect(result.supportedRiskIds).toEqual([]);
+    expect(result.missedRiskIds).toEqual([]);
+    expect(result.supportedReasonSymbolIds).toEqual([]);
+    expect(result.missedReasonSymbolIds).toEqual([]);
+    expect(result.message).toMatch(/선택/);
+  });
+
+  it.each([
+    ['sparse evidence risk IDs', { riskIds: Object.assign(new Array(1), { 0: 'heat-damage' }), relatedSymbolIds: ['care-no-iron'] }],
+    ['sparse evidence related symbol IDs', { riskIds: ['heat-damage'], relatedSymbolIds: Object.assign(new Array(1), { 0: 'care-no-iron' }) }],
+  ] as const)('rejects %s without using its evidence', (_label, finding) => {
+    delete (finding.riskIds as unknown[])[0];
+    delete (finding.relatedSymbolIds as unknown[])[0];
+    const result = evaluatePrediction({
+      evaluation: { ...evidenceEvaluation, findings: [{ ...evidenceEvaluation.findings[0], ...finding }] } as never,
+      selection: {
+        riskIds: ['heat-damage'],
+        reasonSymbolIds: ['care-no-iron'],
+      },
+    });
+
+    expect(result.selectionIsValid).toBe(true);
+    expect(result.supportedRiskIds).toEqual([]);
+    expect(result.missedRiskIds).toEqual([]);
+    expect(result.supportedReasonSymbolIds).toEqual([]);
+    expect(result.missedReasonSymbolIds).toEqual([]);
+    expect(result.message).toMatch(/확인|가능성/);
+  });
+
   it('keeps duplicate valid selection IDs deterministic and valid', () => {
     const result = evaluatePrediction({
       evaluation: evidenceEvaluation,
