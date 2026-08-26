@@ -1,0 +1,12 @@
+:root {
+  color-scheme: light;
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --color-paper: #f5f1e8;
+  --color-ink: #24313a;
+  --color-muted: #5d6a70;
+  --color-accent: #e77855;
+  --color-accent-dark: #a6422b;
+  --color-card: #fffdf8;
+  --radius-card: 1.25rem;
+  --shadow-card: 0 0.5rem 1.5rem rgb(36 49 58 / 10%);
+}
