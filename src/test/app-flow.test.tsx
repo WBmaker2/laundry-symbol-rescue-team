@@ -120,6 +120,30 @@ describe('Task 7 앱 시작 흐름', () => {
     }
   });
 
+  it.each(missions)('default report builds a ready confirmation state for %s', (mission) => {
+    const state = buildLearnerSessionAtStep({ missionId: mission.id, step: 'report' });
+    expect(state.step).toBe('report');
+    expect(state.initialPlan).toEqual(state.revisedPlan);
+    expect(state.initialEvaluation?.status).toBe('ready');
+    expect(state.revisedEvaluation?.status).toBe('ready');
+    if (mission.requiresGrouping) {
+      expect(state.initialGroupingEvaluation?.status).toBe('ready');
+      expect(state.revisedGroupingEvaluation?.status).toBe('ready');
+    } else {
+      expect(state.initialGroupingEvaluation).toBeNull();
+      expect(state.revisedGroupingEvaluation).toBeNull();
+    }
+    expect(state.revisionEvidence?.reasonId).toBe('confirm-current-plan');
+    expect(state.revisionEvidence?.changedStages).toEqual([]);
+    expect(state.revisionEvidence?.relatedSymbolIds.length).toBeGreaterThan(0);
+    expect(state.revisionEvidence?.relatedSymbolIds.every((id) =>
+      mission.garments.some(({ symbolIds }) => symbolIds.includes(id)))).toBe(true);
+
+    const result = renderAppAtStep({ missionId: mission.id, step: 'report' });
+    expect(result.container.querySelector('[data-app-step="report"]')).toBeInTheDocument();
+    result.unmount();
+  });
+
   it('shows the opening prompt exactly once', () => {
     const mission = missions.find(({ id }) => id === 'basic-t-shirt')!;
     renderAppAtStep({ missionId: mission.id, step: 'request' });

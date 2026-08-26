@@ -175,16 +175,20 @@ export function buildLearnerSessionAtStep(input: RenderAppAtStepInput): LearnerS
   const revisedGroupingEvaluation = canonicalGrouping(input.missionId, revisedPlan);
   const relatedSymbolIds = nonAllowedEvidence(state);
   const fallbackSymbolId = mission.garments[0]?.symbolIds[0];
-  if (relatedSymbolIds.length === 0 || !fallbackSymbolId) fail('report 근거 표시가 없어 렌더할 수 없어요.');
+  if (!fallbackSymbolId) fail('report 근거 표시가 없어 렌더할 수 없어요.');
   const revisedGroupingChanged = groupingChanged(initialPlan, revisedPlan);
   const changedStages = changedStagesBetween(initialPlan, revisedPlan);
-  const evidence = scenario === 'within-limits'
-    ? { reasonId: 'confirm-current-plan' as const, relatedSymbolIds: [fallbackSymbolId], changedStages: [] as const }
-    : {
+  let evidence;
+  if (scenario === 'within-limits') {
+    evidence = { reasonId: 'confirm-current-plan' as const, relatedSymbolIds: [fallbackSymbolId], changedStages: [] as const };
+  } else {
+    if (relatedSymbolIds.length === 0) fail('report 근거 표시가 없어 렌더할 수 없어요.');
+    evidence = {
       reasonId: revisedGroupingChanged ? 'separate-incompatible-garment' as const : 'follow-label-limit' as const,
       relatedSymbolIds,
       changedStages,
     };
+  }
   if (input.missionId === 'mixed-load' && revisedGroupingChanged && !evidence.relatedSymbolIds.includes('care-professional')) {
     fail('혼합 미션의 분리 근거 표시가 canonical 평가에 없어요.');
   }
