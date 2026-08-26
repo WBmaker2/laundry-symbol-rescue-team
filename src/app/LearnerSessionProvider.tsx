@@ -1,4 +1,4 @@
-import { createContext, useReducer } from 'react';
+import { createContext, useMemo, useReducer } from 'react';
 import type { Dispatch, ReactNode } from 'react';
 import {
   initialLearnerSession,
@@ -23,8 +23,9 @@ export interface LearnerSessionProviderProps {
 
 export function LearnerSessionProvider({ children, initialState }: LearnerSessionProviderProps) {
   const [state, dispatch] = useReducer(sessionReducer, initialState ?? initialLearnerSession);
+  const value = useMemo(() => ({ state, dispatch }), [state, dispatch]);
   return (
-    <LearnerSessionContext.Provider value={{ state, dispatch }}>
+    <LearnerSessionContext.Provider value={value}>
       {children}
     </LearnerSessionContext.Provider>
   );

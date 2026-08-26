@@ -1,6 +1,9 @@
 import { careOptionById } from '../content/careOptions';
 import { careSymbolById } from '../content/symbols';
 import { missionById } from '../content/missions';
+import { evaluatePlan } from './evaluatePlan';
+import { evaluateGrouping, type GroupingEvaluation } from './evaluateGrouping';
+import { evaluatePrediction } from './evaluatePrediction';
 import type { CareSymbolId, CareOptionId, PlanningStage, DamageRiskId } from './careTypes';
 import type { PlanEvaluation, PlanFinding, PlanFindingStatus } from './evaluationTypes';
 import type { MissionId, StudentPlan, GroupingChoice } from './missionTypes';
@@ -34,10 +37,12 @@ export interface LearnerSession {
   interpretations: readonly SymbolInterpretationAttempt[];
   initialPlan: StudentPlan | null;
   initialEvaluation: PlanEvaluation | null;
+  initialGroupingEvaluation: GroupingEvaluation | null;
   prediction: PredictionSelection | null;
   predictionFeedback: PredictionFeedback | null;
   revisedPlan: StudentPlan | null;
   revisedEvaluation: PlanEvaluation | null;
+  revisedGroupingEvaluation: GroupingEvaluation | null;
   revisionEvidence: RevisionEvidence | null;
 }
 
@@ -45,11 +50,11 @@ export type SessionAction =
   | { type: 'SELECT_MISSION'; missionId: MissionId }
   | { type: 'OPEN_MAGNIFIER' }
   | { type: 'RECORD_INTERPRETATION'; attempt: SymbolInterpretationAttempt }
-  | { type: 'SUBMIT_INITIAL_PLAN'; plan: StudentPlan; evaluation: PlanEvaluation }
+  | { type: 'SUBMIT_INITIAL_PLAN'; plan: StudentPlan; evaluation: PlanEvaluation; groupingEvaluation: GroupingEvaluation | null }
   | { type: 'SUBMIT_PREDICTION'; selection: PredictionSelection; feedback: PredictionFeedback }
   | { type: 'SHOW_SIMULATION' }
   | { type: 'START_REVISION' }
-  | { type: 'SUBMIT_REVISION'; plan: StudentPlan; evaluation: PlanEvaluation; evidence: RevisionEvidence }
+  | { type: 'SUBMIT_REVISION'; plan: StudentPlan; evaluation: PlanEvaluation; groupingEvaluation: GroupingEvaluation | null; evidence: RevisionEvidence }
   | { type: 'RESTART_MISSION' };
 
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
@@ -64,7 +69,8 @@ const relativeLevels = ['lower', 'medium', 'higher'] as const;
 function emptySession(): LearnerSession {
   return {
     missionId: null, step: 'request', interpretations: [], initialPlan: null, initialEvaluation: null,
-    prediction: null, predictionFeedback: null, revisedPlan: null, revisedEvaluation: null, revisionEvidence: null,
+    initialGroupingEvaluation: null, prediction: null, predictionFeedback: null, revisedPlan: null, revisedEvaluation: null,
+    revisedGroupingEvaluation: null, revisionEvidence: null,
   };
 }
 
@@ -76,7 +82,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isDenseArray(value: unknown): value is readonly unknown[] {
   if (!Array.isArray(value)) return false;
-  return value.every((_, index) => Object.prototype.hasOwnProperty.call(value, index));
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) return false;
+  }
+  return true;
 }
 
 function fail(message: string): never {
@@ -108,6 +117,25 @@ function exactKnownList<T extends string>(value: unknown, known: readonly T[], l
   const list = exactStringList(value, label);
   if (list.some((item) => !known.includes(item as T))) fail(`${label}에 알 수 없는 항목이 있어요.`);
   return list as readonly T[];
+}
+
+function structurallyEqual(left: unknown, right: unknown, seen = new WeakMap<object, WeakSet<object>>()): boolean {
+  if (Object.is(left, right)) return true;
+  if (typeof left !== 'object' || left === null || typeof right !== 'object' || right === null) return false;
+  const prior = seen.get(left);
+  if (prior?.has(right)) return true;
+  if (prior) prior.add(right); else seen.set(left, new WeakSet([right]));
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || !isDenseArray(left) || !isDenseArray(right) || left.length !== right.length) return false;
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+    if (leftKeys.length !== left.length || rightKeys.length !== right.length) return false;
+    return left.every((item, index) => structurallyEqual(item, right[index], seen));
+  }
+  const leftKeys = Object.keys(left as object).sort();
+  const rightKeys = Object.keys(right as object).sort();
+  if (leftKeys.length !== rightKeys.length || leftKeys.some((key, index) => key !== rightKeys[index])) return false;
+  return leftKeys.every((key) => structurallyEqual((left as Record<string, unknown>)[key], (right as Record<string, unknown>)[key], seen));
 }
 
 function validatePlan(value: unknown, missionId: MissionId): StudentPlan {
@@ -183,6 +211,7 @@ function cloneFinding(value: unknown, missionId: MissionId): PlanFinding {
 
 function validateEvaluation(value: unknown, missionId: MissionId): PlanEvaluation {
   if (!isRecord(value) || (value.status !== 'ready' && value.status !== 'revise') || !isDenseArray(value.findings)) fail('계획 평가 자료가 올바르지 않아요.');
+  if (!Object.prototype.hasOwnProperty.call(value, 'waterUse') || !Object.prototype.hasOwnProperty.call(value, 'energyUse')) fail('계획 평가의 자원 자료가 없어요.');
   if (!isRecord(value.combinedAllowedOptions)) fail('공통 허용 선택 자료가 올바르지 않아요.');
   const combinedAllowedOptions = {} as Record<PlanningStage, readonly CareOptionId[]>;
   for (const stage of stages) {
@@ -201,6 +230,29 @@ function validateEvaluation(value: unknown, missionId: MissionId): PlanEvaluatio
     energyUse: value.energyUse as PlanEvaluation['energyUse'],
     safetyNotices: [...notices],
   };
+}
+
+function canonicalPlanEvaluation(missionId: MissionId, plan: StudentPlan): PlanEvaluation {
+  return evaluatePlan({ mission: missionFor(missionId), plan, symbols: careSymbolById, options: careOptionById });
+}
+
+function canonicalGroupingEvaluation(missionId: MissionId, plan: StudentPlan): GroupingEvaluation | null {
+  const mission = missionFor(missionId);
+  if (!mission.requiresGrouping || plan.grouping === null) return null;
+  return evaluateGrouping({ mission, grouping: plan.grouping, symbols: careSymbolById, options: careOptionById });
+}
+
+function validateCanonicalEvaluation(value: unknown, missionId: MissionId, plan: StudentPlan): PlanEvaluation {
+  const canonical = canonicalPlanEvaluation(missionId, plan);
+  validateEvaluation(value, missionId);
+  if (!structurallyEqual(value, canonical)) fail('제출한 계획 평가가 실제 계획 판정과 일치하지 않아요.');
+  return canonical;
+}
+
+function validateCanonicalGrouping(value: unknown, missionId: MissionId, plan: StudentPlan): GroupingEvaluation | null {
+  const canonical = canonicalGroupingEvaluation(missionId, plan);
+  if (!structurallyEqual(value, canonical)) fail('제출한 옷 묶음 평가가 실제 묶음 판정과 일치하지 않아요.');
+  return canonical;
 }
 
 function cloneSelection(value: unknown): PredictionSelection {
@@ -249,7 +301,8 @@ function cloneEvidence(value: unknown, missionId: MissionId): RevisionEvidence {
 
 function groupingChanged(a: GroupingChoice | null, b: GroupingChoice | null): boolean {
   if (a === null || b === null) return a !== b;
-  return !sameSet(a.togetherGarmentIds, b.togetherGarmentIds) || !sameSet(a.separateGarmentIds, b.separateGarmentIds);
+  return !sameSet(a.togetherGarmentIds, b.togetherGarmentIds) || !sameSet(a.separateGarmentIds, b.separateGarmentIds)
+    || !sameSet(a.reasonSymbolIds, b.reasonSymbolIds);
 }
 
 function sameSet(a: readonly string[], b: readonly string[]): boolean {
@@ -266,7 +319,7 @@ export function sessionReducer(state: LearnerSession, action: SessionAction): Le
     case 'SELECT_MISSION': {
       requireStage(state, 'request');
       const mission = missionFor(action.missionId);
-      return { ...state, missionId: mission.id, interpretations: [], initialPlan: null, initialEvaluation: null, prediction: null, predictionFeedback: null, revisedPlan: null, revisedEvaluation: null, revisionEvidence: null };
+      return { ...state, missionId: mission.id, interpretations: [], initialPlan: null, initialEvaluation: null, initialGroupingEvaluation: null, prediction: null, predictionFeedback: null, revisedPlan: null, revisedEvaluation: null, revisedGroupingEvaluation: null, revisionEvidence: null };
     }
     case 'OPEN_MAGNIFIER':
       requireStage(state, 'request');
@@ -291,14 +344,19 @@ export function sessionReducer(state: LearnerSession, action: SessionAction): Le
       requireStage(state, 'plan');
       if (state.missionId === null) fail('미션을 먼저 선택하세요.');
       const plan = validatePlan(action.plan, state.missionId);
-      const evaluation = validateEvaluation(action.evaluation, state.missionId);
-      return { ...state, step: 'forecast', initialPlan: plan, initialEvaluation: evaluation };
+      const evaluation = validateCanonicalEvaluation(action.evaluation, state.missionId, plan);
+      const groupingEvaluation = validateCanonicalGrouping(action.groupingEvaluation, state.missionId, plan);
+      return { ...state, step: 'forecast', initialPlan: plan, initialEvaluation: evaluation, initialGroupingEvaluation: groupingEvaluation };
     }
     case 'SUBMIT_PREDICTION': {
       requireStage(state, 'forecast');
+      if (state.initialEvaluation === null) fail('처음 계획 평가가 없어요.');
       const selection = cloneSelection(action.selection);
-      const feedback = cloneFeedback(action.feedback, selection);
-      return { ...state, prediction: selection, predictionFeedback: feedback };
+      if (!structurallyEqual(action.selection, selection)) fail('예측 선택 자료에 알 수 없는 항목이 있어요.');
+      const canonicalFeedback = evaluatePrediction({ evaluation: state.initialEvaluation, selection });
+      cloneFeedback(action.feedback, selection);
+      if (!structurallyEqual(action.feedback, canonicalFeedback)) fail('제출한 예측 피드백이 실제 판정과 일치하지 않아요.');
+      return { ...state, prediction: selection, predictionFeedback: canonicalFeedback };
     }
     case 'SHOW_SIMULATION':
       requireStage(state, 'forecast');
@@ -311,18 +369,25 @@ export function sessionReducer(state: LearnerSession, action: SessionAction): Le
       requireStage(state, 'revision');
       if (state.missionId === null || state.initialPlan === null || state.initialEvaluation === null) fail('처음 계획 자료가 없어요.');
       const plan = validatePlan(action.plan, state.missionId);
-      const evaluation = validateEvaluation(action.evaluation, state.missionId);
+      const evaluation = validateCanonicalEvaluation(action.evaluation, state.missionId, plan);
+      const groupingEvaluation = validateCanonicalGrouping(action.groupingEvaluation, state.missionId, plan);
       if (evaluation.status !== 'ready') fail('수정 계획은 허용 범위로 완성해야 해요.');
+      if (state.missionId === 'mixed-load' && groupingEvaluation?.status !== 'ready') fail('수정한 옷 묶음은 허용 범위로 완성해야 해요.');
       const evidence = cloneEvidence(action.evidence, state.missionId);
       const changedStages = expectedChangedStages(state.initialPlan, plan);
       if (evidence.changedStages.length !== changedStages.length || evidence.changedStages.some((stage, index) => stage !== changedStages[index])) fail('실제 변경 단계와 수정 근거가 맞지 않아요.');
       const changedGrouping = groupingChanged(state.initialPlan.grouping, plan.grouping);
       if (state.initialEvaluation.status === 'ready') {
-        if (evidence.reasonId !== 'confirm-current-plan' || changedStages.length > 0 || changedGrouping) fail('허용된 계획은 현재 계획 확인으로만 마무리할 수 있어요.');
+        const groupingReady = state.missionId !== 'mixed-load' || state.initialGroupingEvaluation?.status === 'ready';
+        if (!groupingReady) {
+          if (evidence.reasonId === 'confirm-current-plan' || !changedGrouping) fail('옷 묶음도 먼저 수정하거나 확인해야 해요.');
+        } else if (evidence.reasonId !== 'confirm-current-plan' || changedStages.length > 0 || changedGrouping) {
+          fail('허용된 계획은 현재 계획 확인으로만 마무리할 수 있어요.');
+        }
       } else if (evidence.reasonId === 'confirm-current-plan' || (changedStages.length === 0 && !changedGrouping)) {
         fail('수정 계획은 실제 단계나 옷 묶음을 바꿔야 해요.');
       }
-      return { ...state, step: 'report', revisedPlan: plan, revisedEvaluation: evaluation, revisionEvidence: evidence };
+      return { ...state, step: 'report', revisedPlan: plan, revisedEvaluation: evaluation, revisedGroupingEvaluation: groupingEvaluation, revisionEvidence: evidence };
     }
     case 'RESTART_MISSION':
       return emptySession();
