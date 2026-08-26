@@ -1380,7 +1380,7 @@ flowchart LR
 - [ ] **Step 6: 표시 확대경 커밋을 만든다**
 
   ```bash
-  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md .superpowers/sdd/2026-08-26-laundry-symbol-rescue-team-implementation-plan/task-8-report.md
+  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
   git commit -m "feat: add accessible symbol interpretation"
   ```
 
