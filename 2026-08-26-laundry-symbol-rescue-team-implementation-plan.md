@@ -1190,6 +1190,7 @@ flowchart LR
       type: 'SUBMIT_INITIAL_PLAN',
       plan: makePlanFixture('basic-t-shirt', 'within-limits'),
       evaluation: readyBasicTShirtEvaluation,
+      groupingEvaluation: null,
     })).toThrow('모든 표시 해석을 먼저 완료하세요.');
   });
 
