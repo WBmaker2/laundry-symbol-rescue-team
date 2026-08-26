@@ -9,7 +9,6 @@ function GarmentSketch() {
     </svg>
   );
 }
-
 export function RescueRequestScreen({ mission, onOpenMagnifier }: {
   mission: GarmentMission;
   onOpenMagnifier: () => void;
@@ -50,4 +49,3 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
     </section>
   );
 }
-

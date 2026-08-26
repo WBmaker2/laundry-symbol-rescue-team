@@ -2,7 +2,6 @@ interface HighContrastToggleProps {
   enabled: boolean;
   onToggle: () => void;
 }
-
 export function HighContrastToggle({ enabled, onToggle }: HighContrastToggleProps) {
   return (
     <button
@@ -16,4 +15,3 @@ export function HighContrastToggle({ enabled, onToggle }: HighContrastToggleProp
     </button>
   );
 }
-

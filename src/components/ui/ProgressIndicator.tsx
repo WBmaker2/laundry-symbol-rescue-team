@@ -26,4 +26,3 @@ export function ProgressIndicator({ currentStep }: { currentStep: SessionStep })
     </nav>
   );
 }
-
