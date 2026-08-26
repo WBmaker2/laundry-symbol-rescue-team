@@ -1017,6 +1017,11 @@ flowchart LR
     supportedRiskIds: readonly DamageRiskId[];
     unsupportedRiskIds: readonly DamageRiskId[];
     missedRiskIds: readonly DamageRiskId[];
+    supportedReasonSymbolIds: readonly CareSymbolId[];
+    unsupportedReasonSymbolIds: readonly CareSymbolId[];
+    missedReasonSymbolIds: readonly CareSymbolId[];
+    invalidRiskIds: readonly string[];
+    invalidReasonSymbolIds: readonly string[];
     message: string;
   }
   ```
@@ -1079,7 +1084,7 @@ flowchart LR
 
 - [ ] **Step 4: 예측 피드백을 최소 구현한다**
 
-  `evaluatePrediction()`은 `PlanEvaluation.findings[].riskIds`의 합집합을 근거 집합으로 사용한다. 학생이 고른 위험을 `supportedRiskIds`, 근거에 없는 선택을 `unsupportedRiskIds`, 근거에는 있으나 고르지 않은 위험을 `missedRiskIds`로 분류하고, 결과 문구는 라벨 재확인을 유도한다. 확률·퍼센트·정밀 단위를 만들지 않는다.
+  `evaluatePrediction()`은 `outside-limit | missing-step | unread-restriction` 상태 finding의 `riskIds`와 `relatedSymbolIds`만 근거로 사용한다. `allowed`, 알 수 없는 상태, `invalid-input`, 구조가 깨진 finding은 위험·표시 근거에서 제외하거나 전체 평가를 무효화하며, 무효 평가에서는 지원·누락 근거를 만들지 않는다. 학생이 고른 위험을 `supportedRiskIds`, 근거에 없는 선택을 `unsupportedRiskIds`, 근거에는 있으나 고르지 않은 위험을 `missedRiskIds`로 분류한다. 표시 근거도 같은 순서로 `supportedReasonSymbolIds`, `unsupportedReasonSymbolIds`, `missedReasonSymbolIds`로 분류하며, 모르는 위험·표시는 각각 `invalidRiskIds`, `invalidReasonSymbolIds`에 결정적으로 중복 제거해 담는다. 결과 문구는 라벨 재확인을 유도하고 확률·퍼센트·정밀 단위를 만들지 않는다.
 
 - [ ] **Step 5: 그룹·예측 판정 테스트를 통과시킨다**
 

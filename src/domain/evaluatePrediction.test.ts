@@ -6,6 +6,25 @@ import { makePlanFixture } from '../test/factories';
 import { evaluatePlan } from './evaluatePlan';
 import { evaluatePrediction } from './evaluatePrediction';
 
+const evidenceEvaluation = {
+  status: 'revise' as const,
+  findings: [
+    {
+      status: 'outside-limit' as const,
+      stage: 'dry' as const,
+      garmentIds: ['decorated-top'],
+      optionId: 'plan-dry-tumble-high' as const,
+      relatedSymbolIds: ['care-no-tumble' as const, 'care-no-iron' as const],
+      riskIds: ['heat-damage' as const],
+      feedback: '가능성이 있어요.',
+    },
+  ],
+  combinedAllowedOptions: { wash: [], dry: [], iron: [] },
+  waterUse: null,
+  energyUse: null,
+  safetyNotices: [],
+};
+
 describe('evaluatePrediction', () => {
   it('connects predicted risks to findings rather than certainty', () => {
     const evaluation = evaluatePlan({
@@ -98,5 +117,51 @@ describe('evaluatePrediction', () => {
     expect(malformed.unsupportedRiskIds).toEqual([]);
     expect(malformed.missedRiskIds).toEqual([]);
     expect(malformed.message).toMatch(/확인|가능성/);
+  });
+
+  it('classifies supported, unsupported, missed, and invalid reasons deterministically', () => {
+    const result = evaluatePrediction({
+      evaluation: evidenceEvaluation,
+      selection: {
+        riskIds: ['heat-damage', 'unknown-risk', 'heat-damage'] as never,
+        reasonSymbolIds: [
+          'care-no-iron',
+          'care-professional',
+          'care-no-iron',
+          'unknown-symbol',
+        ] as never,
+      },
+    });
+
+    expect(result.supportedRiskIds).toEqual(['heat-damage']);
+    expect(result.unsupportedRiskIds).toEqual([]);
+    expect(result.missedRiskIds).toEqual([]);
+    expect(result.invalidRiskIds).toEqual(['unknown-risk']);
+    expect(result.supportedReasonSymbolIds).toEqual(['care-no-iron']);
+    expect(result.unsupportedReasonSymbolIds).toEqual(['care-professional']);
+    expect(result.missedReasonSymbolIds).toEqual(['care-no-tumble']);
+    expect(result.invalidReasonSymbolIds).toEqual(['unknown-symbol']);
+  });
+
+  it.each([
+    ['unknown status', [{ status: 'mystery', riskIds: ['heat-damage'], relatedSymbolIds: ['care-no-iron'] }]],
+    ['invalid input status', [{ status: 'invalid-input', riskIds: ['heat-damage'], relatedSymbolIds: ['care-no-iron'] }]],
+    ['malformed finding', [{ status: 'outside-limit', riskIds: null, relatedSymbolIds: ['care-no-iron'] }]],
+  ] as const)('rejects %s findings without using their evidence', (_label, findings) => {
+    const result = evaluatePrediction({
+      evaluation: { ...evidenceEvaluation, findings } as never,
+      selection: {
+        riskIds: ['heat-damage'],
+        reasonSymbolIds: ['care-no-iron'],
+      },
+    });
+
+    expect(result.supportedRiskIds).toEqual([]);
+    expect(result.missedRiskIds).toEqual([]);
+    expect(result.unsupportedRiskIds).toEqual(['heat-damage']);
+    expect(result.supportedReasonSymbolIds).toEqual([]);
+    expect(result.missedReasonSymbolIds).toEqual([]);
+    expect(result.unsupportedReasonSymbolIds).toEqual(['care-no-iron']);
+    expect(result.message).toMatch(/확인|가능성/);
   });
 });

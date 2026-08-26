@@ -1,15 +1,20 @@
-import type { DamageRiskId } from './careTypes';
+import type { CareSymbolId, DamageRiskId } from './careTypes';
 import type { PlanEvaluation } from './evaluationTypes';
 
 export interface PredictionSelection {
   riskIds: readonly DamageRiskId[];
-  reasonSymbolIds: readonly import('./careTypes').CareSymbolId[];
+  reasonSymbolIds: readonly CareSymbolId[];
 }
 
 export interface PredictionFeedback {
   supportedRiskIds: readonly DamageRiskId[];
   unsupportedRiskIds: readonly DamageRiskId[];
   missedRiskIds: readonly DamageRiskId[];
+  supportedReasonSymbolIds: readonly CareSymbolId[];
+  unsupportedReasonSymbolIds: readonly CareSymbolId[];
+  missedReasonSymbolIds: readonly CareSymbolId[];
+  invalidRiskIds: readonly string[];
+  invalidReasonSymbolIds: readonly string[];
   message: string;
 }
 
@@ -20,62 +25,126 @@ const riskIds: readonly DamageRiskId[] = [
   'decoration-damage',
   'heat-damage',
 ];
+const symbolIds: readonly CareSymbolId[] = [
+  'care-wash-30-gentle',
+  'care-no-bleach',
+  'care-flat-dry',
+  'care-tumble-low',
+  'care-no-tumble',
+  'care-iron-low',
+  'care-no-iron',
+  'care-professional',
+];
+const evidenceStatuses = ['outside-limit', 'missing-step', 'unread-restriction'] as const;
 
 function isRiskId(value: unknown): value is DamageRiskId {
   return typeof value === 'string' && riskIds.includes(value as DamageRiskId);
 }
 
-function uniqueRisks(values: readonly unknown[]): readonly DamageRiskId[] {
-  return [...new Set(values.filter(isRiskId))];
+function isSymbolId(value: unknown): value is CareSymbolId {
+  return typeof value === 'string' && symbolIds.includes(value as CareSymbolId);
 }
 
-function safeSelection(selection: unknown): readonly DamageRiskId[] {
-  if (!selection || typeof selection !== 'object' || !Array.isArray((selection as { riskIds?: unknown }).riskIds)) {
-    return [];
-  }
-  return uniqueRisks((selection as { riskIds: readonly unknown[] }).riskIds);
+function uniqueStrings(values: readonly unknown[]): readonly string[] {
+  return [...new Set(values.filter((value): value is string => typeof value === 'string'))];
 }
 
-function evidenceFrom(evaluation: unknown): { risks: readonly DamageRiskId[]; invalid: boolean } {
-  if (!evaluation || typeof evaluation !== 'object' || !Array.isArray((evaluation as { findings?: unknown }).findings)) {
-    return { risks: [], invalid: true };
+function uniqueTyped<T>(values: readonly T[]): readonly T[] {
+  return [...new Set(values)];
+}
+
+interface ParsedSelection {
+  risks: readonly DamageRiskId[];
+  invalidRisks: readonly string[];
+  reasons: readonly CareSymbolId[];
+  invalidReasons: readonly string[];
+}
+
+function parseSelection(selection: unknown): ParsedSelection {
+  if (!selection || typeof selection !== 'object') {
+    return { risks: [], invalidRisks: [], reasons: [], invalidReasons: [] };
   }
-  const findings = (evaluation as { findings: readonly unknown[] }).findings;
-  const invalid = findings.some((finding) => {
-    return Boolean(finding && typeof finding === 'object'
-      && (finding as { status?: unknown }).status === 'invalid-input');
-  });
-  const risks = uniqueRisks(findings.flatMap((finding) => {
-    if (!finding || typeof finding !== 'object') return [];
-    const typedFinding = finding as { status?: unknown; riskIds?: unknown };
-    if (typedFinding.status === 'allowed' || !Array.isArray(typedFinding.riskIds)) return [];
-    return typedFinding.riskIds;
-  }));
-  return { risks, invalid };
+  const rawRisks = (selection as { riskIds?: unknown }).riskIds;
+  const rawReasons = (selection as { reasonSymbolIds?: unknown }).reasonSymbolIds;
+  const riskValues = Array.isArray(rawRisks) ? uniqueStrings(rawRisks) : [];
+  const reasonValues = Array.isArray(rawReasons) ? uniqueStrings(rawReasons) : [];
+  return {
+    risks: riskValues.filter(isRiskId),
+    invalidRisks: riskValues.filter((riskId) => !isRiskId(riskId)),
+    reasons: reasonValues.filter(isSymbolId),
+    invalidReasons: reasonValues.filter((symbolId) => !isSymbolId(symbolId)),
+  };
+}
+
+interface Evidence {
+  valid: boolean;
+  risks: readonly DamageRiskId[];
+  reasons: readonly CareSymbolId[];
+}
+
+function validEvidenceList<T>(value: unknown, predicate: (value: unknown) => value is T): value is readonly T[] {
+  return Array.isArray(value) && value.every(predicate);
+}
+
+function readEvidence(evaluation: unknown): Evidence {
+  if (!evaluation || typeof evaluation !== 'object'
+    || !Array.isArray((evaluation as { findings?: unknown }).findings)) {
+    return { valid: false, risks: [], reasons: [] };
+  }
+  const risks: DamageRiskId[] = [];
+  const reasons: CareSymbolId[] = [];
+  for (const finding of (evaluation as { findings: readonly unknown[] }).findings) {
+    if (!finding || typeof finding !== 'object') return { valid: false, risks: [], reasons: [] };
+    const typedFinding = finding as { status?: unknown; riskIds?: unknown; relatedSymbolIds?: unknown };
+    if (typedFinding.status !== 'allowed'
+      && !evidenceStatuses.includes(typedFinding.status as typeof evidenceStatuses[number])) {
+      return { valid: false, risks: [], reasons: [] };
+    }
+    if (!validEvidenceList(typedFinding.riskIds, isRiskId)
+      || !validEvidenceList(typedFinding.relatedSymbolIds, isSymbolId)) {
+      return { valid: false, risks: [], reasons: [] };
+    }
+    if (typedFinding.status === 'allowed') continue;
+    risks.push(...typedFinding.riskIds);
+    reasons.push(...typedFinding.relatedSymbolIds);
+  }
+  return { valid: true, risks: uniqueTyped(risks), reasons: uniqueTyped(reasons) };
 }
 
 export function evaluatePrediction(input: {
   evaluation: PlanEvaluation;
   selection: PredictionSelection;
 }): PredictionFeedback {
-  const selection = safeSelection(input && typeof input === 'object' ? input.selection : null);
-  const { risks: evidence, invalid } = evidenceFrom(input && typeof input === 'object' ? input.evaluation : null);
-  if (invalid) {
-    return {
-      supportedRiskIds: [],
-      unsupportedRiskIds: selection,
-      missedRiskIds: [],
-      message: '입력 자료를 확인할 수 없어 손상 가능성을 연결할 수 없어요. 표시와 관리 계획을 다시 살펴보세요.',
-    };
-  }
-
-  const evidenceSet = new Set(evidence);
-  const selectedSet = new Set(selection);
-  const supportedRiskIds = selection.filter((riskId) => evidenceSet.has(riskId));
-  const unsupportedRiskIds = selection.filter((riskId) => !evidenceSet.has(riskId));
-  const missedRiskIds = evidence.filter((riskId) => !selectedSet.has(riskId));
-  const message = evidence.length === 0
-    ? '현재 판정에서 연결할 손상 가능성 근거가 아직 없어요. 표시와 관리 계획을 다시 살펴보세요.'
-    : '선택한 위험과 표시·관리 계획의 근거를 연결해 보았어요. 손상 가능성을 단정하지 말고 표시를 다시 확인해 보세요.';
-  return { supportedRiskIds, unsupportedRiskIds, missedRiskIds, message };
+  const selection = parseSelection(input && typeof input === 'object' ? input.selection : null);
+  const evidence = readEvidence(input && typeof input === 'object' ? input.evaluation : null);
+  const evidenceRisks = new Set(evidence.risks);
+  const evidenceReasons = new Set(evidence.reasons);
+  const selectedRisks = new Set(selection.risks);
+  const selectedReasons = new Set(selection.reasons);
+  const supportedRiskIds = evidence.valid ? selection.risks.filter((riskId) => evidenceRisks.has(riskId)) : [];
+  const unsupportedRiskIds = selection.risks.filter((riskId) => !evidenceRisks.has(riskId));
+  const missedRiskIds = evidence.valid ? evidence.risks.filter((riskId) => !selectedRisks.has(riskId)) : [];
+  const supportedReasonSymbolIds = evidence.valid
+    ? selection.reasons.filter((symbolId) => evidenceReasons.has(symbolId))
+    : [];
+  const unsupportedReasonSymbolIds = selection.reasons.filter((symbolId) => !evidenceReasons.has(symbolId));
+  const missedReasonSymbolIds = evidence.valid
+    ? evidence.reasons.filter((symbolId) => !selectedReasons.has(symbolId))
+    : [];
+  const message = !evidence.valid
+    ? '입력 자료를 확인할 수 없어 손상 가능성을 연결하지 못했어요. 표시와 관리 계획을 다시 살펴보세요.'
+    : evidence.risks.length === 0 && evidence.reasons.length === 0
+      ? '연결할 손상 가능성 근거가 아직 없어요. 표시와 관리 계획을 다시 살펴보세요.'
+      : '선택한 위험과 표시·관리 계획의 근거를 연결해 보았어요. 손상 가능성을 단정하지 말고 표시를 다시 확인해 보세요.';
+  return {
+    supportedRiskIds,
+    unsupportedRiskIds,
+    missedRiskIds,
+    supportedReasonSymbolIds,
+    unsupportedReasonSymbolIds,
+    missedReasonSymbolIds,
+    invalidRiskIds: selection.invalidRisks,
+    invalidReasonSymbolIds: selection.invalidReasons,
+    message,
+  };
 }

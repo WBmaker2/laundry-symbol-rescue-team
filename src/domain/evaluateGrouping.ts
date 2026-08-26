@@ -32,6 +32,32 @@ const emptyCommon: Readonly<Record<PlanningStage, readonly CareOptionId[]>> = {
   dry: [],
   iron: [],
 };
+const careSymbolIds: readonly CareSymbolId[] = [
+  'care-wash-30-gentle',
+  'care-no-bleach',
+  'care-flat-dry',
+  'care-tumble-low',
+  'care-no-tumble',
+  'care-iron-low',
+  'care-no-iron',
+  'care-professional',
+];
+const careOptionIds: readonly CareOptionId[] = [
+  'plan-wash-gentle-30',
+  'plan-wash-strong-40',
+  'plan-wash-pause-and-ask',
+  'plan-dry-flat',
+  'plan-dry-line',
+  'plan-dry-tumble-low',
+  'plan-dry-tumble-high',
+  'plan-dry-pause-and-ask',
+  'plan-iron-none',
+  'plan-iron-low-with-adult',
+  'plan-iron-high-with-adult',
+  'plan-iron-pause-and-ask',
+];
+const damageRiskIds = ['shrinkage', 'deformation', 'color-change', 'decoration-damage', 'heat-damage'];
+const careStages = ['wash', 'bleach', 'dry', 'iron', 'professional'];
 
 function unique<T>(values: readonly T[]): readonly T[] {
   return [...new Set(values)];
@@ -39,6 +65,78 @@ function unique<T>(values: readonly T[]): readonly T[] {
 
 function isStringArray(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object';
+}
+
+function isCareSymbolId(value: unknown): value is CareSymbolId {
+  return typeof value === 'string' && careSymbolIds.includes(value as CareSymbolId);
+}
+
+function isCareOptionId(value: unknown): value is CareOptionId {
+  return typeof value === 'string' && careOptionIds.includes(value as CareOptionId);
+}
+
+function isPlanningStage(value: unknown): value is PlanningStage {
+  return value === 'wash' || value === 'dry' || value === 'iron';
+}
+
+function isRiskList(value: unknown): value is readonly string[] {
+  return Array.isArray(value)
+    && value.every((riskId) => typeof riskId === 'string' && damageRiskIds.includes(riskId));
+}
+
+function validOptionCatalog(options: ReadonlyMap<CareOptionId, CareOption>): boolean {
+  if (options.size !== careOptionIds.length) return false;
+  for (const [key, option] of options) {
+    if (!isCareOptionId(key) || !isRecord(option) || option.id !== key
+      || !isPlanningStage(option.stage) || !isRiskList(option.riskIds)) return false;
+  }
+  return careOptionIds.every((id) => options.has(id));
+}
+
+function validSymbolCatalog(
+  symbols: ReadonlyMap<CareSymbolId, CareSymbol>,
+  options: ReadonlyMap<CareOptionId, CareOption>,
+): boolean {
+  if (symbols.size !== careSymbolIds.length) return false;
+  for (const [key, symbol] of symbols) {
+    if (!isCareSymbolId(key) || !isRecord(symbol) || symbol.id !== key
+      || typeof symbol.category !== 'string' || !careStages.includes(symbol.category)
+      || !Array.isArray(symbol.allowedOptionIds) || !Array.isArray(symbol.forbiddenOptionIds)
+      || !isRiskList(symbol.riskIds)) return false;
+    const constraintIds = [...symbol.allowedOptionIds, ...symbol.forbiddenOptionIds];
+    if (!constraintIds.every(isCareOptionId)) return false;
+    for (const optionId of constraintIds) {
+      const option = options.get(optionId);
+      if (option === undefined || option.stage !== symbol.category) return false;
+    }
+  }
+  return careSymbolIds.every((id) => symbols.has(id));
+}
+
+function validMission(mission: GarmentMission, symbols: ReadonlyMap<CareSymbolId, CareSymbol>, options: ReadonlyMap<CareOptionId, CareOption>): boolean {
+  if (!Array.isArray(mission.garments)) return false;
+  const garmentIds = mission.garments.map((garment) => garment?.id);
+  if (!garmentIds.every((id): id is string => typeof id === 'string' && id.length > 0)
+    || new Set(garmentIds).size !== garmentIds.length) return false;
+  return mission.garments.every((garment) => {
+    if (!isRecord(garment) || !Array.isArray(garment.symbolIds)
+      || !garment.symbolIds.every((symbolId) => isCareSymbolId(symbolId) && symbols.get(symbolId) !== null && symbols.get(symbolId) !== undefined)) {
+      return false;
+    }
+    const byStage = garment.materialAllowedOptionIdsByStage;
+    if (!isRecord(byStage)) return false;
+    return stages.every((stage) => {
+      const ids = byStage[stage];
+      return Array.isArray(ids) && ids.every((optionId) => {
+        if (!isCareOptionId(optionId)) return false;
+        return options.get(optionId)?.stage === stage;
+      });
+    });
+  });
 }
 
 function intersect(source: readonly CareOptionId[], other: readonly CareOptionId[]): readonly CareOptionId[] {
@@ -71,8 +169,7 @@ function symbolsOn(
   symbols: ReadonlyMap<CareSymbolId, CareSymbol>,
 ): readonly CareSymbol[] {
   return garments.flatMap((garment) => garment.symbolIds
-    .map((symbolId) => symbols.get(symbolId))
-    .filter((symbol): symbol is CareSymbol => symbol !== undefined));
+    .map((symbolId) => symbols.get(symbolId)!));
 }
 
 function finding(
@@ -105,6 +202,11 @@ export function evaluateGrouping(input: {
   if (!mission || !Array.isArray(mission.garments) || !grouping || !symbols || !options
     || !(symbols instanceof Map) || !(options instanceof Map)) {
     return invalidResult([], '미션과 옷 묶음 자료를 다시 확인해 주세요.');
+  }
+
+  if (!validOptionCatalog(options) || !validSymbolCatalog(symbols, options)
+    || !validMission(mission, symbols, options)) {
+    return invalidResult([], '표시·관리 선택·재료 모형 자료를 다시 확인해 주세요.');
   }
 
   const missionIds = mission.garments.map((garment) => {
@@ -142,6 +244,7 @@ export function evaluateGrouping(input: {
     .some((symbol) => symbol.category === 'professional'));
   const professionalTogether = professionalGarments.filter((garment) => grouping.togetherGarmentIds.includes(garment.id));
   const professionalSeparate = professionalGarments.filter((garment) => grouping.separateGarmentIds.includes(garment.id));
+  const separate = mission.garments.filter(({ id }) => grouping.separateGarmentIds.includes(id));
   const emptyStages = together.length > 1
     ? stages.filter((stage) => commonAllowedOptions[stage].length === 0)
     : [];
@@ -153,10 +256,13 @@ export function evaluateGrouping(input: {
       .filter((symbol) => symbol.category === stage)
       .map((symbol) => symbol.id)),
   ]);
+  const separatedCauseSymbols = unique(
+    symbolsOn(separate, symbols)
+      .filter((symbol) => symbol.category === 'professional' || symbol.requiresAcknowledgement)
+      .map((symbol) => symbol.id),
+  );
 
-  const hasSeparationCause = professionalTogether.length > 0
-    || professionalSeparate.length > 0
-    || emptyStages.length > 0;
+  const hasSeparationCause = professionalTogether.length > 0 || emptyStages.length > 0;
   if (professionalTogether.length > 0 || emptyStages.length > 0) {
     const garmentIds = unique([
       ...professionalTogether.map(({ id }) => id),
@@ -173,18 +279,19 @@ export function evaluateGrouping(input: {
   }
 
   const reasons = grouping.reasonSymbolIds;
+  const causativeSymbols = grouping.separateGarmentIds.length > 0 ? separatedCauseSymbols : blockingSymbols;
   const reasonsAreCausative = reasons.length > 0
-    && reasons.every((symbolId) => blockingSymbols.includes(symbolId));
-  if (hasSeparationCause) {
+    && reasons.every((symbolId) => causativeSymbols.includes(symbolId));
+  if (grouping.separateGarmentIds.length > 0) {
     if (!reasonsAreCausative) {
       findings.push(finding(
         'missing-reason',
         [...grouping.separateGarmentIds],
-        blockingSymbols,
+        causativeSymbols,
         '따로 살펴볼 옷의 실제 표시를 근거로 골라 주세요.',
       ));
     }
-  } else if (reasons.length > 0) {
+  } else if (!hasSeparationCause && reasons.length > 0) {
     findings.push(finding(
       'missing-reason',
       [...grouping.togetherGarmentIds],

@@ -3,6 +3,8 @@ import { careOptionById } from '../content/careOptions';
 import { missionById } from '../content/missions';
 import { careSymbolById } from '../content/symbols';
 import { makePlanFixture } from '../test/factories';
+import type { CareOption } from './missionTypes';
+import type { CareOptionId, CareSymbol, CareSymbolId } from './careTypes';
 import { evaluateGrouping } from './evaluateGrouping';
 
 describe('evaluateGrouping', () => {
@@ -78,5 +80,101 @@ describe('evaluateGrouping', () => {
     expect(result.status).toBe('revise');
     expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(true);
     expect(result.findings.some(({ relatedSymbolIds }) => relatedSymbolIds.includes('care-professional'))).toBe(true);
+  });
+
+  it('fails closed when a referenced professional symbol is null', () => {
+    const mission = missionById.get('mixed-load')!;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById)
+      .set('care-professional', null as unknown as CareSymbol);
+    const result = evaluateGrouping({
+      mission,
+      grouping: {
+        togetherGarmentIds: mission.garments.map(({ id }) => id),
+        separateGarmentIds: [],
+        reasonSymbolIds: [],
+      },
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.code).toBe('invalid-membership');
+    expect(result.commonAllowedOptions).toEqual({ wash: [], dry: [], iron: [] });
+  });
+
+  it.each([
+    ['symbol key/value mismatch', () => {
+      const symbol = careSymbolById.get('care-professional')!;
+      return {
+        symbols: new Map<CareSymbolId, CareSymbol>(careSymbolById)
+          .set('care-professional', { ...symbol, id: 'care-no-iron' } as CareSymbol),
+        options: careOptionById,
+        mission: missionById.get('mixed-load')!,
+      };
+    }],
+    ['malformed symbol risk list', () => {
+      const symbol = careSymbolById.get('care-professional')!;
+      return {
+        symbols: new Map<CareSymbolId, CareSymbol>(careSymbolById)
+          .set('care-professional', { ...symbol, riskIds: null } as unknown as CareSymbol),
+        options: careOptionById,
+        mission: missionById.get('mixed-load')!,
+      };
+    }],
+    ['option key/value mismatch', () => {
+      const option = careOptionById.get('plan-wash-gentle-30')!;
+      return {
+        symbols: careSymbolById,
+        options: new Map<CareOptionId, CareOption>(careOptionById)
+          .set('plan-wash-gentle-30', { ...option, id: 'plan-wash-strong-40' } as CareOption),
+        mission: missionById.get('mixed-load')!,
+      };
+    }],
+    ['stage-mismatched symbol option reference', () => {
+      const symbol = careSymbolById.get('care-professional')!;
+      return {
+        symbols: new Map<CareSymbolId, CareSymbol>(careSymbolById)
+          .set('care-professional', { ...symbol, allowedOptionIds: ['plan-wash-gentle-30'] } as CareSymbol),
+        options: careOptionById,
+        mission: missionById.get('mixed-load')!,
+      };
+    }],
+  ] as const)('rejects %s before resolving options', (_label, makeInput) => {
+    const input = makeInput();
+    const result = evaluateGrouping({
+      mission: input.mission,
+      grouping: makePlanFixture('mixed-load', 'within-limits').grouping!,
+      symbols: input.symbols,
+      options: input.options,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.code).toBe('invalid-membership');
+    expect(result.commonAllowedOptions).toEqual({ wash: [], dry: [], iron: [] });
+  });
+
+  it('requires an actual reason whenever a non-professional garment is separated', () => {
+    const mission = missionById.get('mixed-load')!;
+    const [first, second, third] = mission.garments;
+    const arbitraryMission = {
+      ...mission,
+      garments: [first, second, {
+        ...third,
+        symbolIds: ['care-wash-30-gentle'],
+      }],
+    } as unknown as typeof mission;
+    const result = evaluateGrouping({
+      mission: arbitraryMission,
+      grouping: {
+        togetherGarmentIds: [first!.id, second!.id],
+        separateGarmentIds: [third!.id],
+        reasonSymbolIds: [],
+      },
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(true);
   });
 });
