@@ -6,6 +6,7 @@ import { ProgressIndicator } from '../components/ui/ProgressIndicator';
 import { useLearnerSession } from './useLearnerSession';
 import { missionById } from '../content/missions';
 import type { SessionStep } from '../domain/sessionReducer';
+import { SymbolMagnifierScreen } from '../features/magnifier/SymbolMagnifierScreen';
 
 function FutureStepPlaceholder({ step, title, reportReady }: { step: Exclude<SessionStep, 'request'>; title: string; reportReady?: boolean }) {
   return (
@@ -35,7 +36,18 @@ function StepContent({ step }: { step: SessionStep }) {
       if (!mission) throw new Error('선택한 미션을 찾을 수 없습니다.');
       return <RescueRequestScreen mission={mission} onOpenMagnifier={() => dispatch({ type: 'OPEN_MAGNIFIER' })} />;
     }
-    case 'magnifier': return <FutureStepPlaceholder step={step} title="표시 확대경" />;
+    case 'magnifier': {
+      if (state.missionId === null) throw new Error('표시 확대경을 열 미션이 없습니다.');
+      const mission = missionById.get(state.missionId);
+      if (!mission) throw new Error('표시 확대경의 미션을 찾을 수 없습니다.');
+      return (
+        <SymbolMagnifierScreen
+          mission={mission}
+          interpretations={state.interpretations}
+          onChoose={(attempt) => dispatch({ type: 'RECORD_INTERPRETATION', attempt })}
+        />
+      );
+    }
     case 'plan': return <FutureStepPlaceholder step={step} title="관리 순서판" />;
     case 'forecast': return <FutureStepPlaceholder step={step} title="손상 예보" />;
     case 'simulation': return <FutureStepPlaceholder step={step} title="가상 관리" />;

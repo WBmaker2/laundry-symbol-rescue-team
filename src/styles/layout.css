@@ -179,6 +179,176 @@
   stroke-width: 4;
 }
 
+.magnifier-screen,
+.magnifier-error {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid rgb(36 49 58 / 14%);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+
+.magnifier-screen h2,
+.magnifier-error h2 {
+  margin: 0;
+}
+
+.symbol-progress {
+  margin: 0;
+  color: var(--color-accent-dark);
+  font-weight: 800;
+}
+
+.care-symbol-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 3px solid var(--color-accent-dark);
+  border-radius: 1rem;
+  background: var(--color-card);
+}
+
+.symbol-card-heading h2 {
+  margin: 0.25rem 0 0;
+}
+
+.symbol-figure {
+  display: grid;
+  grid-template-columns: minmax(8rem, 13rem) 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.symbol-image {
+  width: min(100%, 12rem);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border: 3px solid var(--color-ink);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.symbol-image-expanded {
+  width: min(100%, 18rem);
+  border-width: 4px;
+}
+
+.symbol-text-description {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.symbol-text-description h3,
+.symbol-text-description p {
+  margin: 0;
+}
+
+.symbol-text-description p:last-child,
+.symbol-description-focus {
+  color: var(--color-muted);
+}
+
+.symbol-expand-button,
+.meaning-option,
+.meaning-options + .symbol-description-focus {
+  min-height: 44px;
+}
+
+.symbol-expand-button,
+.primary-action {
+  width: fit-content;
+  padding: 0.6rem 0.9rem;
+}
+
+.meaning-options {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid rgb(36 49 58 / 25%);
+  border-radius: 0.75rem;
+}
+
+.meaning-options legend {
+  padding-inline: 0.25rem;
+  font-weight: 800;
+}
+
+.meaning-option {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.45rem;
+  border-radius: 0.5rem;
+}
+
+.meaning-option input {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+}
+
+.symbol-description-focus {
+  margin: 0;
+  padding: 0.5rem;
+}
+
+.symbol-description-focus:focus {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.interpretation-feedback {
+  margin: 0;
+  padding: 0.75rem;
+  border-left: 4px solid var(--color-accent);
+  background: rgb(231 120 85 / 10%);
+}
+
+.glossary-help {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgb(36 49 58 / 25%);
+  border-radius: 0.75rem;
+}
+
+.glossary-help summary {
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.glossary-help dl {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+.glossary-help dt {
+  font-weight: 800;
+}
+
+.glossary-help dd {
+  margin: 0;
+}
+
+.adult-safety-reminder {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (max-width: 40rem) {
+  .symbol-figure {
+    grid-template-columns: 1fr;
+  }
+
+  .symbol-image,
+  .symbol-image-expanded {
+    width: min(100%, 14rem);
+  }
+}
+
 .garment-card h3 {
   margin-top: 0;
 }

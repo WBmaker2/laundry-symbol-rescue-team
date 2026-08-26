@@ -1330,7 +1330,9 @@ flowchart LR
 - Create: `src/features/magnifier/CareSymbolCard.tsx`
 - Create: `src/features/magnifier/SymbolMagnifierScreen.tsx`
 - Modify: `src/app/AppShell.tsx`
+- Modify: `src/styles/layout.css` (controller ruling: Task 8 component layout and high-contrast presentation)
 - Modify: `src/test/app-flow.test.tsx`
+- Create: `src/vite-env.d.ts` (Vite `BASE_URL` typing for Pages-safe symbol assets)
 
 **Interfaces:**
 - Consumes: `CareSymbol`, `evaluateInterpretation()`, `RECORD_INTERPRETATION`, `careSymbolById`.
@@ -1378,7 +1380,7 @@ flowchart LR
 - [ ] **Step 6: 표시 확대경 커밋을 만든다**
 
   ```bash
-  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/app/AppShell.tsx src/test/app-flow.test.tsx
+  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md .superpowers/sdd/2026-08-26-laundry-symbol-rescue-team-implementation-plan/task-8-report.md
   git commit -m "feat: add accessible symbol interpretation"
   ```
 
