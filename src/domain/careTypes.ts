@@ -65,6 +65,7 @@ export interface CareSymbol {
   categoryHint: string;
   shortDescription: string;
   accessibleDescription: string;
+  provenanceNotes: string;
   assetPath: `/symbols/${string}.svg`;
   sourceIds: readonly string[];
   reviewedAt: string;
@@ -95,7 +96,8 @@ export type ContentValidationCode =
   | 'missing-correct-choice'
   | 'invalid-constraint-id'
   | 'invalid-acknowledgement'
-  | 'empty-constraint-set';
+  | 'empty-constraint-set'
+  | 'invalid-symbol-field';
 
 export interface ContentValidationIssue {
   code: ContentValidationCode;

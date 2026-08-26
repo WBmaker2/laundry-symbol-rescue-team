@@ -397,7 +397,7 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     }
   });
 
-  it('SymbolFigure는 빈 alt·설명과 잘못된 display kind·provenance에서 img를 렌더하지 않는다', () => {
+  it('SymbolFigure는 per-symbol review·provenance가 잘못되면 img를 렌더하지 않는다', () => {
     const valid = careSymbols[0]!;
     const { rerender } = render(<SymbolFigure symbol={{ ...valid, accessibleDescription: ' ' }} expanded={false} />);
     expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
@@ -411,5 +411,25 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     rerender(<SymbolFigure symbol={{ ...valid, sourceIds: [] }} expanded={false} />);
     expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
     expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, reviewedAt: 'not-a-date' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, provenanceNotes: 'TBD' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, provenanceNotes: ' ' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, reviewedAt: 'unknown' }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, sourceIds: ['unknown-source'] }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={{ ...valid, sourceIds: [valid.sourceIds[0]!, valid.sourceIds[0]!] }} expanded={false} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/표시 이미지를 안전하게 불러올 수 없어요/);
+    expect(screen.queryByRole('img')).toBeNull();
+    rerender(<SymbolFigure symbol={valid} expanded={false} />);
+    expect(screen.getByRole('img', { name: valid.accessibleDescription })).toBeInTheDocument();
   });
 });

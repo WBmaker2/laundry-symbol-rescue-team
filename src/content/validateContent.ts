@@ -39,6 +39,8 @@ const CARE_OPTION_IDS = [
   'plan-iron-pause-and-ask',
 ] as const satisfies readonly CareOptionId[];
 const CARE_OPTION_ID_SET = new Set<string>(CARE_OPTION_IDS);
+const CARE_STAGE_SET = new Set(['wash', 'bleach', 'dry', 'iron', 'professional']);
+const DAMAGE_RISK_IDS = new Set(['shrinkage', 'deformation', 'color-change', 'decoration-damage', 'heat-damage']);
 const PLACEHOLDER_PATTERN = /(?:^|[\s_./:-])(?:x{2,}|tbd|todo|placeholder|unknown|n[./-]?a|not[\s_-]*available)(?:$|[\s_./:-])/i;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -190,6 +192,93 @@ function validateConstraintIds(
   return validIds;
 }
 
+function isSafeSymbolAssetPath(symbolId: string, assetPath: unknown): boolean {
+  return typeof assetPath === 'string'
+    && !assetPath.includes('..') && !/%2e/i.test(assetPath)
+    && !assetPath.includes('?') && !assetPath.includes('#')
+    && assetPath === `/symbols/${symbolId}.svg`;
+}
+
+export function validatePublishedSymbolRecord(
+  rawSymbol: unknown,
+  sourceById: ReadonlyMap<string, SourceRecord>,
+): readonly ContentValidationIssue[] {
+  const issues: ContentValidationIssue[] = [];
+  const symbolRecord = asRecord(rawSymbol);
+  const rawId = typeof symbolRecord?.id === 'string' ? symbolRecord.id.trim() : '';
+  const symbolId = symbolIssueId(rawId);
+  if (symbolRecord === undefined) return [issue('missing-accessible-text', '심볼 레코드가 객체가 아닙니다.')];
+  if (!REQUIRED_SYMBOL_ID_SET.has(rawId)) {
+    issues.push(issue('unexpected-symbol-id', `요구된 8개 목록에 없는 심볼 ID입니다: ${rawId || '<missing-symbol-id>'}`, symbolId));
+  }
+
+  const sourceIds = Array.isArray(symbolRecord.sourceIds) ? symbolRecord.sourceIds : [];
+  const linkedSources: SourceRecord[] = [];
+  const seenSourceIds = new Set<string>();
+  if (sourceIds.length === 0) issues.push(issue('missing-source', '심볼에 연결된 출처가 없습니다.', symbolId));
+  for (const rawSourceId of sourceIds) {
+    if (typeof rawSourceId !== 'string' || rawSourceId.trim() === '') {
+      issues.push(issue('missing-source', '출처 ID가 비어 있거나 문자열이 아닙니다.', symbolId));
+      continue;
+    }
+    const sourceId = rawSourceId.trim();
+    if (seenSourceIds.has(sourceId)) issues.push(issue('duplicate-source-id', `심볼 출처 ID가 중복됩니다: ${sourceId}`, symbolId));
+    seenSourceIds.add(sourceId);
+    const source = sourceById.get(sourceId);
+    if (source === undefined) {
+      issues.push(issue('missing-source', `승인 출처를 찾을 수 없습니다: ${sourceId}`, symbolId));
+      continue;
+    }
+    linkedSources.push(source);
+    if (!isApprovedSource(source)) issues.push(issue('unapproved-source', `출처가 승인되지 않았거나 HTTPS가 아닙니다: ${sourceId}`, symbolId));
+    if (source.reviewedAt !== symbolRecord.reviewedAt) {
+      issues.push(issue('review-date-mismatch', `심볼과 출처의 검수일이 다릅니다: ${String(symbolRecord.reviewedAt)} / ${String(source.reviewedAt)}`, symbolId));
+    }
+  }
+  const approvedLinkedIds = new Set(linkedSources.filter(isApprovedSource).map(({ id }) => id));
+  if (!approvedLinkedIds.has(ISO_SOURCE_ID) || ![...approvedLinkedIds].some((id) => DOMESTIC_SOURCE_IDS.has(id))) {
+    issues.push(issue('missing-required-provenance', '각 심볼은 승인된 ISO 3758 출처와 국내 공신력 출처를 모두 연결해야 합니다.', symbolId));
+  }
+  if (!hasValidIsoDate(symbolRecord.reviewedAt)) {
+    issues.push(issue('review-date-mismatch', '심볼 검수일이 유효한 YYYY-MM-DD가 아닙니다.', symbolId));
+  }
+  if (!hasUsableText(symbolRecord.name) || !hasUsableText(symbolRecord.categoryHint)
+    || !hasUsableText(symbolRecord.accessibleDescription) || !hasUsableText(symbolRecord.shortDescription)
+    || !hasUsableText(symbolRecord.provenanceNotes)) {
+    issues.push(issue('missing-accessible-text', '심볼의 이름·범주·문자 설명·provenanceNotes가 비어 있거나 placeholder입니다.', symbolId));
+  }
+  if (!CARE_STAGE_SET.has(String(symbolRecord.category))) {
+    issues.push(issue('invalid-symbol-field', '심볼 범주가 올바르지 않습니다.', symbolId));
+  }
+  if (!isSafeSymbolAssetPath(rawId, symbolRecord.assetPath)) {
+    issues.push(issue('invalid-symbol-field', '심볼 자산 경로가 ID와 정확히 일치하지 않습니다.', symbolId));
+  }
+  if (symbolRecord.displayKind === 'official-standard-symbol') {
+    issues.push(issue('unlicensed-display-kind', '검증된 자산 이용권 증거가 없어 official-standard-symbol을 공개할 수 없습니다.', symbolId));
+  } else if (symbolRecord.displayKind !== 'learning-icon') {
+    issues.push(issue('missing-display-kind', '표시 구분 라벨이 없습니다.', symbolId));
+  }
+  const meaningIds = validateMeaningOptions(symbolRecord, symbolId, issues);
+  const correctMeaningOptionId = typeof symbolRecord.correctMeaningOptionId === 'string' ? symbolRecord.correctMeaningOptionId.trim() : '';
+  if (!hasUsableText(correctMeaningOptionId) || !meaningIds.has(correctMeaningOptionId)) {
+    issues.push(issue('missing-correct-choice', '정답 의미가 보이는 선택지에 포함되지 않습니다.', symbolId));
+  }
+  const allowedOptionIds = validateConstraintIds(symbolRecord, 'allowedOptionIds', symbolId, issues);
+  const forbiddenOptionIds = validateConstraintIds(symbolRecord, 'forbiddenOptionIds', symbolId, issues);
+  if (typeof symbolRecord.requiresAcknowledgement !== 'boolean') {
+    issues.push(issue('invalid-acknowledgement', 'requiresAcknowledgement는 boolean이어야 합니다.', symbolId));
+  }
+  if (allowedOptionIds.length === 0 && forbiddenOptionIds.length === 0 && symbolRecord.requiresAcknowledgement !== true) {
+    issues.push(issue('empty-constraint-set', '허용·금지·추가 확인 제약이 없습니다.', symbolId));
+  }
+  if (!Array.isArray(symbolRecord.riskIds) || symbolRecord.riskIds.length === 0
+    || symbolRecord.riskIds.some((riskId) => typeof riskId !== 'string' || !DAMAGE_RISK_IDS.has(riskId))
+    || new Set(symbolRecord.riskIds).size !== symbolRecord.riskIds.length) {
+    issues.push(issue('invalid-symbol-field', '심볼 위험 근거 목록이 올바르지 않습니다.', symbolId));
+  }
+  return issues;
+}
+
 export function validatePublishedContent(input: {
   sources: readonly SourceRecord[];
   symbols: readonly CareSymbol[];
@@ -222,96 +311,7 @@ export function validatePublishedContent(input: {
       issues.push(issue('unexpected-symbol-id', `요구된 8개 목록에 없는 심볼 ID입니다: ${rawId || '<missing-symbol-id>'}`, currentSymbolId));
     }
 
-    if (symbolRecord === undefined) {
-      issues.push(issue('missing-accessible-text', '심볼 레코드가 객체가 아닙니다.'));
-      continue;
-    }
-
-    const sourceIdsUnknown = Array.isArray(symbolRecord.sourceIds) ? symbolRecord.sourceIds : [];
-    const linkedSources: SourceRecord[] = [];
-    if (sourceIdsUnknown.length === 0) {
-      issues.push(issue('missing-source', '심볼에 연결된 출처가 없습니다.', currentSymbolId));
-    }
-    for (const rawSourceId of sourceIdsUnknown) {
-      if (typeof rawSourceId !== 'string' || rawSourceId.trim() === '') {
-        issues.push(issue('missing-source', '출처 ID가 비어 있거나 문자열이 아닙니다.', currentSymbolId));
-        continue;
-      }
-      const sourceId = rawSourceId.trim();
-      const source = sourceById.get(sourceId);
-      if (source === undefined) {
-        issues.push(issue('missing-source', `승인 출처를 찾을 수 없습니다: ${sourceId}`, currentSymbolId));
-        continue;
-      }
-      linkedSources.push(source);
-      if (!isApprovedSource(source)) {
-        issues.push(issue('unapproved-source', `출처가 승인되지 않았거나 HTTPS가 아닙니다: ${sourceId}`, currentSymbolId));
-      }
-      const symbolReviewedAt = symbolRecord.reviewedAt;
-      if (source.reviewedAt !== symbolReviewedAt) {
-        issues.push(
-          issue(
-            'review-date-mismatch',
-            `심볼과 출처의 검수일이 다릅니다: ${String(symbolReviewedAt)} / ${String(source.reviewedAt)}`,
-            currentSymbolId,
-          ),
-        );
-      }
-    }
-
-    const approvedLinkedIds = new Set(
-      linkedSources.filter(isApprovedSource).map((source) => source.id),
-    );
-    if (!approvedLinkedIds.has(ISO_SOURCE_ID) || ![...approvedLinkedIds].some((id) => DOMESTIC_SOURCE_IDS.has(id))) {
-      issues.push(
-        issue(
-          'missing-required-provenance',
-          '각 심볼은 승인된 ISO 3758 출처와 국내 공신력 출처를 모두 연결해야 합니다.',
-          currentSymbolId,
-        ),
-      );
-    }
-
-    if (!hasValidIsoDate(symbolRecord.reviewedAt)) {
-      issues.push(issue('review-date-mismatch', '심볼 검수일이 유효한 YYYY-MM-DD가 아닙니다.', currentSymbolId));
-    }
-
-    if (!hasUsableText(symbolRecord.accessibleDescription) || !hasUsableText(symbolRecord.shortDescription)) {
-      issues.push(issue('missing-accessible-text', '문자 대체 설명이 비어 있거나 placeholder입니다.', currentSymbolId));
-    }
-
-    if (symbolRecord.displayKind === 'official-standard-symbol') {
-      issues.push(
-        issue(
-          'unlicensed-display-kind',
-          '검증된 자산 이용권 증거가 없어 official-standard-symbol을 공개할 수 없습니다.',
-          currentSymbolId,
-        ),
-      );
-    } else if (symbolRecord.displayKind !== 'learning-icon') {
-      issues.push(issue('missing-display-kind', '표시 구분 라벨이 없습니다.', currentSymbolId));
-    }
-
-    const meaningIds = validateMeaningOptions(symbolRecord, currentSymbolId, issues);
-    const correctMeaningOptionId =
-      typeof symbolRecord.correctMeaningOptionId === 'string'
-        ? symbolRecord.correctMeaningOptionId.trim()
-        : '';
-    if (!hasUsableText(correctMeaningOptionId) || !meaningIds.has(correctMeaningOptionId)) {
-      issues.push(
-        issue('missing-correct-choice', '정답 의미가 보이는 선택지에 포함되지 않습니다.', currentSymbolId),
-      );
-    }
-
-    const allowedOptionIds = validateConstraintIds(symbolRecord, 'allowedOptionIds', currentSymbolId, issues);
-    const forbiddenOptionIds = validateConstraintIds(symbolRecord, 'forbiddenOptionIds', currentSymbolId, issues);
-    const requiresAcknowledgement = symbolRecord.requiresAcknowledgement;
-    if (typeof requiresAcknowledgement !== 'boolean') {
-      issues.push(issue('invalid-acknowledgement', 'requiresAcknowledgement는 boolean이어야 합니다.', currentSymbolId));
-    }
-    if (allowedOptionIds.length === 0 && forbiddenOptionIds.length === 0 && requiresAcknowledgement !== true) {
-      issues.push(issue('empty-constraint-set', '허용·금지·추가 확인 제약이 없습니다.', currentSymbolId));
-    }
+    issues.push(...validatePublishedSymbolRecord(rawSymbol, sourceById));
   }
 
   for (const requiredId of REQUIRED_SYMBOL_IDS) {

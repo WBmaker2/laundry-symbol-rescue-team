@@ -26,6 +26,7 @@ const commonSourceIds = [
 ] as const;
 const professionalSourceIds = [...commonSourceIds, 'ginetex-care-symbols-guide'] as const;
 const learningIconNotice = '학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.';
+const provenanceNotes = 'ISO 3758:2023와 국내 공신력 출처를 대조한 학습용 자료예요.';
 
 const wash30Allowed: readonly CareOptionId[] = [
   'plan-wash-gentle-30',
@@ -79,6 +80,7 @@ export const careSymbols = [
     shortDescription: `30°C와 한 줄은 약한 세탁을 뜻해요. ${learningIconNotice}`,
     accessibleDescription:
       '세탁통 안에 30이 있고 아래에 한 줄이 있는 그림입니다. 30°C의 약한 세탁을 뜻합니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-wash-30-gentle.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -102,6 +104,7 @@ export const careSymbols = [
     shortDescription: `표백하지 않는다는 뜻이에요. ${learningIconNotice}`,
     accessibleDescription:
       '삼각형 안에 엑스가 있는 그림입니다. 표백 처리를 하지 않는다는 뜻입니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-no-bleach.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -125,6 +128,7 @@ export const careSymbols = [
     shortDescription: `네모 안 가로선은 평평하게 펴서 자연 건조하는 뜻이에요. ${learningIconNotice}`,
     accessibleDescription:
       '네모 안에 가로선 하나가 있는 그림입니다. 옷을 평평하게 펴서 자연 건조하는 뜻입니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-flat-dry.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -148,6 +152,7 @@ export const careSymbols = [
     shortDescription: `네모 안 원과 점 하나는 낮은 열의 회전식 건조를 뜻해요. ${learningIconNotice}`,
     accessibleDescription:
       '네모 안 원에 점 하나가 있는 그림입니다. 낮은 열의 회전식 건조 범위를 뜻합니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-tumble-low.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -171,6 +176,7 @@ export const careSymbols = [
     shortDescription: `네모 안 원에 엑스가 있으면 회전식 건조를 하지 않아요. ${learningIconNotice}`,
     accessibleDescription:
       '네모 안 원에 엑스가 있는 그림입니다. 회전식 건조기를 사용하지 않는다는 뜻입니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-no-tumble.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -194,6 +200,7 @@ export const careSymbols = [
     shortDescription: `점 하나의 다리미는 낮은 온도 범위예요. 실제 다림질은 보호자와 확인해요. ${learningIconNotice}`,
     accessibleDescription:
       '다리미 모양 안에 점 하나가 있는 그림입니다. 낮은 온도 범위에서 다림질할 수 있다는 뜻이며, 실제 도구는 보호자와 확인해야 합니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-iron-low.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -217,6 +224,7 @@ export const careSymbols = [
     shortDescription: `다리미에 엑스가 있으면 다림질하지 않아요. ${learningIconNotice}`,
     accessibleDescription:
       '다리미 모양에 엑스가 있는 그림입니다. 다림질하지 않는다는 뜻입니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-no-iron.svg',
     sourceIds: commonSourceIds,
     reviewedAt,
@@ -240,6 +248,7 @@ export const careSymbols = [
     shortDescription: `원 안의 표시는 전문 관리 범위를 확인하는 정보예요. 먼저 보호자·전문가에게 물어봐요. ${learningIconNotice}`,
     accessibleDescription:
       '원 안에 P 글자가 있는 단순화한 그림입니다. 가정에서 바로 처리하기 전에 보호자나 전문 관리 전문가에게 범위를 확인하는 뜻입니다. 학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.',
+    provenanceNotes,
     assetPath: '/symbols/care-professional.svg',
     sourceIds: professionalSourceIds,
     reviewedAt,
