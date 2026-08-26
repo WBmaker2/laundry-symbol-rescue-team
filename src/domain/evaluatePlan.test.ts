@@ -24,8 +24,8 @@ describe('resolveGarmentAllowedOptions', () => {
       options: careOptionById,
     });
 
-    expect(result.wash).toEqual(['plan-wash-gentle-30']);
-    expect(result.dry).toEqual(['plan-dry-tumble-low']);
+    expect(result.wash).toEqual(['plan-wash-gentle-30', 'plan-wash-pause-and-ask']);
+    expect(result.dry).toEqual(['plan-dry-tumble-low', 'plan-dry-pause-and-ask']);
     expect(garment.materialAllowedOptionIdsByStage.wash).toEqual(materialWash);
     expect(garment.materialAllowedOptionIdsByStage.dry).toEqual(materialDry);
   });
@@ -39,11 +39,24 @@ describe('resolveGarmentAllowedOptions', () => {
     });
 
     expect(result.wash).toEqual(['plan-wash-pause-and-ask']);
-    expect(result.dry).toEqual(['plan-dry-flat']);
+    expect(result.dry).toEqual(['plan-dry-flat', 'plan-dry-pause-and-ask']);
   });
 });
 
 describe('evaluatePlan', () => {
+  it.each([
+    'basic-t-shirt',
+    'soft-scarf',
+    'sportswear',
+    'decorated-top',
+    'mixed-load',
+  ] as const)('accepts the %s within-limits fixture as ready', (missionId) => {
+    const result = evaluatePlan(inputFor(missionId, makePlanFixture(missionId, 'within-limits')));
+
+    expect(result.status).toBe('ready');
+    expect(result.findings.filter(({ status }) => status !== 'allowed')).toHaveLength(0);
+  });
+
   it('requires all three planning stages', () => {
     const result = evaluatePlan(inputFor('basic-t-shirt'));
 

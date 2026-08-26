@@ -27,24 +27,37 @@ const commonSourceIds = [
 const professionalSourceIds = [...commonSourceIds, 'ginetex-care-symbols-guide'] as const;
 const learningIconNotice = '학습용 아이콘이며 실제 의류 라벨 표시를 대신하지 않아요.';
 
-const wash30Allowed: readonly CareOptionId[] = ['plan-wash-gentle-30'];
+const wash30Allowed: readonly CareOptionId[] = [
+  'plan-wash-gentle-30',
+  'plan-wash-pause-and-ask',
+];
 const wash30Forbidden: readonly CareOptionId[] = ['plan-wash-strong-40'];
-const flatDryAllowed: readonly CareOptionId[] = ['plan-dry-flat'];
+const flatDryAllowed: readonly CareOptionId[] = ['plan-dry-flat', 'plan-dry-pause-and-ask'];
 const flatDryForbidden: readonly CareOptionId[] = [
   'plan-dry-line',
   'plan-dry-tumble-low',
   'plan-dry-tumble-high',
 ];
-const tumbleLowAllowed: readonly CareOptionId[] = ['plan-dry-tumble-low'];
+const tumbleLowAllowed: readonly CareOptionId[] = [
+  'plan-dry-tumble-low',
+  'plan-dry-pause-and-ask',
+];
 const tumbleLowForbidden: readonly CareOptionId[] = ['plan-dry-tumble-high'];
-const noTumbleAllowed: readonly CareOptionId[] = ['plan-dry-flat', 'plan-dry-line'];
+const noTumbleAllowed: readonly CareOptionId[] = [
+  'plan-dry-flat',
+  'plan-dry-line',
+  'plan-dry-pause-and-ask',
+];
 const noTumbleForbidden: readonly CareOptionId[] = [
   'plan-dry-tumble-low',
   'plan-dry-tumble-high',
 ];
-const lowIronAllowed: readonly CareOptionId[] = ['plan-iron-low-with-adult'];
+const lowIronAllowed: readonly CareOptionId[] = [
+  'plan-iron-low-with-adult',
+  'plan-iron-pause-and-ask',
+];
 const lowIronForbidden: readonly CareOptionId[] = ['plan-iron-high-with-adult'];
-const noIronAllowed: readonly CareOptionId[] = ['plan-iron-none'];
+const noIronAllowed: readonly CareOptionId[] = ['plan-iron-none', 'plan-iron-pause-and-ask'];
 const noIronForbidden: readonly CareOptionId[] = [
   'plan-iron-low-with-adult',
   'plan-iron-high-with-adult',

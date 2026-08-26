@@ -34,15 +34,15 @@ function restrictionIdsForMission(missionId: MissionId) {
 function withinLimitOptions(missionId: MissionId): Readonly<Record<PlanningStage, CareOptionId>> {
   switch (missionId) {
     case 'basic-t-shirt':
-      return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-line', iron: 'plan-iron-none' };
+      return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-tumble-low', iron: 'plan-iron-none' };
     case 'soft-scarf':
       return { wash: 'plan-wash-pause-and-ask', dry: 'plan-dry-flat', iron: 'plan-iron-none' };
     case 'sportswear':
-      return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-line', iron: 'plan-iron-none' };
+      return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-tumble-low', iron: 'plan-iron-none' };
     case 'decorated-top':
       return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-flat', iron: 'plan-iron-none' };
     case 'mixed-load':
-      return { wash: 'plan-wash-pause-and-ask', dry: 'plan-dry-line', iron: 'plan-iron-none' };
+      return { wash: 'plan-wash-pause-and-ask', dry: 'plan-dry-pause-and-ask', iron: 'plan-iron-pause-and-ask' };
   }
 }
 
