@@ -7,9 +7,9 @@ import type {
 } from './careTypes';
 import type { CareOption, GarmentMission, StudentPlan, VirtualGarment } from './missionTypes';
 import type { PlanEvaluation, PlanFinding } from './evaluationTypes';
+import { validatePlanInput, type PlanEvaluationInput } from './validatePlanInput';
 
 const planningStages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
-const careStages = ['wash', 'bleach', 'dry', 'iron', 'professional'] as const;
 const stageLabels: Readonly<Record<PlanningStage, string>> = {
   wash: '세탁',
   dry: '건조',
@@ -193,15 +193,6 @@ function restrictionFeedback(symbol: CareSymbol): string {
   return `'${symbol.name}' 표시의 추가 제한을 아직 확인하지 않았어요. 실제 라벨과 보호자·교사 안내를 먼저 살펴보세요.`;
 }
 
-function isMapLike(value: unknown): value is ReadonlyMap<string, unknown> {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    typeof (value as ReadonlyMap<string, unknown>).get === 'function' &&
-    typeof (value as ReadonlyMap<string, unknown>).has === 'function'
-  );
-}
-
 function invalidEvaluation(message: string): PlanEvaluation {
   const finding: PlanFinding = {
     status: 'invalid-input',
@@ -222,157 +213,6 @@ function invalidEvaluation(message: string): PlanEvaluation {
   };
 }
 
-function optionReferenceIssue(
-  optionId: unknown,
-  stage: PlanningStage,
-  options: ReadonlyMap<string, unknown>,
-  source: string,
-): string | null {
-  if (typeof optionId !== 'string') return `${source}의 선택 ID가 올바르지 않아요.`;
-  const option = options.get(optionId) as CareOption | undefined;
-  if (option === undefined) return `${source} '${optionId}' 선택을 목록에서 찾을 수 없어요.`;
-  if (option.id !== optionId) return `${source} '${optionId}' 선택의 ID가 목록과 달라요.`;
-  if (option.stage !== stage) return `${source} '${optionId}' 선택이 ${stageLabels[stage]} 단계와 맞지 않아요.`;
-  return null;
-}
-
-function symbolReferenceIssue(
-  symbolId: unknown,
-  symbols: ReadonlyMap<string, unknown>,
-): string | null {
-  if (typeof symbolId !== 'string') return '표시 ID가 올바르지 않아요.';
-  const symbol = symbols.get(symbolId) as CareSymbol | undefined;
-  if (symbol === undefined) return `'${symbolId}' 표시를 목록에서 찾을 수 없어요.`;
-  if (symbol.id !== symbolId) return `'${symbolId}' 표시의 ID가 목록과 달라요.`;
-  return null;
-}
-
-function isPlanningStage(value: string): value is PlanningStage {
-  return planningStages.includes(value as PlanningStage);
-}
-
-function validatePlanInput(input: {
-  mission: GarmentMission;
-  plan: StudentPlan;
-  symbols: ReadonlyMap<CareSymbolId, CareSymbol>;
-  options: ReadonlyMap<CareOptionId, CareOption>;
-}): string | null {
-  const { mission, plan, symbols, options } = input;
-  if (!isMapLike(symbols) || !isMapLike(options)) return '표시·선택 목록이 올바른 목록이 아니에요.';
-  if (mission === null || typeof mission !== 'object' || !Array.isArray(mission.garments)) {
-    return '미션의 의류 목록이 올바르지 않아요.';
-  }
-  if (
-    typeof mission.id !== 'string' ||
-    mission.garments.some(
-      (garment) => garment === null || typeof garment !== 'object' || typeof garment.id !== 'string',
-    )
-  ) {
-    return '미션 ID 또는 의류 ID가 올바르지 않아요.';
-  }
-  if (plan === null || typeof plan !== 'object' || !Array.isArray(plan.garmentIds)) {
-    return '계획의 의류 목록이 올바르지 않아요.';
-  }
-  if (plan.missionId !== mission.id) return '계획과 미션의 ID가 서로 달라요.';
-  if (new Set(mission.garments.map(({ id }) => id)).size !== mission.garments.length) {
-    return '미션에 중복된 의류 ID가 있어요.';
-  }
-
-  const missionGarmentIds = mission.garments.map(({ id }) => id);
-  const plannedGarmentIds = plan.garmentIds;
-  if (
-    plannedGarmentIds.length !== missionGarmentIds.length ||
-    new Set(plannedGarmentIds).size !== plannedGarmentIds.length ||
-    plannedGarmentIds.some((garmentId) => !missionGarmentIds.includes(garmentId))
-  ) {
-    return '계획의 의류 목록이 미션의 의류와 정확히 일치하지 않아요.';
-  }
-
-  if (plan.stageOptions === null || typeof plan.stageOptions !== 'object') {
-    return '세탁·건조·다림질 선택 목록이 올바르지 않아요.';
-  }
-  for (const stage of planningStages) {
-    if (!Object.prototype.hasOwnProperty.call(plan.stageOptions, stage)) {
-      return `${stageLabels[stage]} 선택이 계획에 없어요.`;
-    }
-    const optionId = plan.stageOptions[stage];
-    if (optionId !== null) {
-      const issue = optionReferenceIssue(optionId, stage, options, `${stageLabels[stage]} 계획`);
-      if (issue !== null) return issue;
-    }
-  }
-
-  for (const garment of mission.garments) {
-    if (!garment || typeof garment.id !== 'string' || !Array.isArray(garment.symbolIds)) {
-      return '미션 의류의 표시 목록이 올바르지 않아요.';
-    }
-    for (const symbolId of garment.symbolIds) {
-      const symbolIssue = symbolReferenceIssue(symbolId, symbols);
-      if (symbolIssue !== null) return symbolIssue;
-      const symbol = symbols.get(symbolId) as CareSymbol;
-      const symbolStage = symbol.category;
-      if (!careStages.includes(symbolStage as (typeof careStages)[number])) {
-        return `'${symbol.name}' 표시의 범주가 올바르지 않아요.`;
-      }
-      if (!Array.isArray(symbol.allowedOptionIds) || !Array.isArray(symbol.forbiddenOptionIds)) {
-        return `'${symbol.name}' 표시의 조건 목록이 올바르지 않아요.`;
-      }
-      if (isPlanningStage(symbolStage)) {
-        for (const optionId of [...symbol.allowedOptionIds, ...symbol.forbiddenOptionIds]) {
-          const issue = optionReferenceIssue(optionId, symbolStage, options, `'${symbol.name}' 표시 조건`);
-          if (issue !== null) return issue;
-        }
-      } else if (symbol.allowedOptionIds.length > 0 || symbol.forbiddenOptionIds.length > 0) {
-        return `'${symbol.name}' 표시는 계획 단계 선택을 만들 수 없어요.`;
-      }
-    }
-
-    const materialOptions = garment.materialAllowedOptionIdsByStage;
-    if (materialOptions === null || typeof materialOptions !== 'object') {
-      return `'${garment.name}' 의류의 재료 조건이 올바르지 않아요.`;
-    }
-    for (const stage of planningStages) {
-      const optionIds = materialOptions[stage];
-      if (!Array.isArray(optionIds) || optionIds.length === 0) {
-        return `'${garment.name}' 의류의 ${stageLabels[stage]} 재료 조건이 비어 있어요.`;
-      }
-      for (const optionId of optionIds) {
-        const issue = optionReferenceIssue(optionId, stage, options, `'${garment.name}' 재료 조건`);
-        if (issue !== null) return issue;
-      }
-    }
-  }
-
-  if (!Array.isArray(plan.acknowledgedRestrictionIds)) return '추가 제한 확인 목록이 올바르지 않아요.';
-  for (const symbolId of plan.acknowledgedRestrictionIds) {
-    const issue = symbolReferenceIssue(symbolId, symbols);
-    if (issue !== null) return issue;
-  }
-  if (plan.grouping !== null) {
-    if (
-      plan.grouping === undefined ||
-      !Array.isArray(plan.grouping.togetherGarmentIds) ||
-      !Array.isArray(plan.grouping.separateGarmentIds) ||
-      !Array.isArray(plan.grouping.reasonSymbolIds)
-    ) {
-      return '혼합 의류 그룹 정보가 올바르지 않아요.';
-    }
-    const groupedIds = [...plan.grouping.togetherGarmentIds, ...plan.grouping.separateGarmentIds];
-    if (
-      groupedIds.length !== missionGarmentIds.length ||
-      new Set(groupedIds).size !== groupedIds.length ||
-      groupedIds.some((garmentId) => !missionGarmentIds.includes(garmentId))
-    ) {
-      return '혼합 의류 그룹이 미션의 의류와 정확히 일치하지 않아요.';
-    }
-    for (const symbolId of plan.grouping.reasonSymbolIds) {
-      const issue = symbolReferenceIssue(symbolId, symbols);
-      if (issue !== null) return issue;
-    }
-  }
-  return null;
-}
-
 function resourceLevel(
   plan: StudentPlan,
   options: ReadonlyMap<CareOptionId, CareOption>,
@@ -389,15 +229,10 @@ function resourceLevel(
   return relativeMaximum(values);
 }
 
-export function evaluatePlan(input: {
-  mission: GarmentMission;
-  plan: StudentPlan;
-  symbols: ReadonlyMap<CareSymbolId, CareSymbol>;
-  options: ReadonlyMap<CareOptionId, CareOption>;
-}): PlanEvaluation {
-  const { mission, plan, symbols, options } = input;
-  const inputIssue = validatePlanInput(input);
-  if (inputIssue !== null) return invalidEvaluation(inputIssue);
+export function evaluatePlan(input: PlanEvaluationInput): PlanEvaluation {
+  const validation = validatePlanInput(input);
+  if (!validation.valid) return invalidEvaluation(validation.message);
+  const { mission, plan, symbols, options } = validation.input;
 
   const garments = selectedGarments(mission, plan);
   const garmentIds = garments.map((garment) => garment.id);

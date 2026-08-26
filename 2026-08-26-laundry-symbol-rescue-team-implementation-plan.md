@@ -164,6 +164,7 @@ laundry-symbol-rescue-team/
 │   │   ├── evaluatePrediction.test.ts
 │   │   ├── evaluatePrediction.ts
 │   │   ├── evaluationTypes.ts
+│   │   ├── validatePlanInput.ts
 │   │   ├── missionTypes.ts
 │   │   ├── sessionReducer.test.ts
 │   │   └── sessionReducer.ts
@@ -829,6 +830,7 @@ flowchart LR
 
 **Files:**
 - Create: `src/domain/evaluationTypes.ts`
+- Create: `src/domain/validatePlanInput.ts`
 - Create: `src/domain/evaluateInterpretation.ts`
 - Create: `src/domain/evaluateInterpretation.test.ts`
 - Create: `src/domain/evaluatePlan.ts`
@@ -836,7 +838,7 @@ flowchart LR
 
 **Interfaces:**
 - Consumes: `CareSymbol`, `GarmentMission`, `StudentPlan`, `careSymbolById`, `careOptionById`.
-- Produces: `InterpretationFeedback`, `PlanFinding`, `PlanEvaluation`, `evaluateInterpretation()`, `resolveGarmentAllowedOptions()`, `evaluatePlan()`.
+- Produces: `InterpretationFeedback`, `PlanFinding`, `PlanEvaluation`, `PlanEvaluationInput`, `PlanInputValidationResult`, `validatePlanInput()`, `evaluateInterpretation()`, `resolveGarmentAllowedOptions()`, `evaluatePlan()`.
 
   ```ts
   export interface InterpretationFeedback {
@@ -851,7 +853,8 @@ flowchart LR
     | 'allowed'
     | 'outside-limit'
     | 'missing-step'
-    | 'unread-restriction';
+    | 'unread-restriction'
+    | 'invalid-input';
 
   export interface PlanFinding {
     status: PlanFindingStatus;
@@ -867,10 +870,23 @@ flowchart LR
     status: 'ready' | 'revise';
     findings: readonly PlanFinding[];
     combinedAllowedOptions: Readonly<Record<PlanningStage, readonly CareOptionId[]>>;
-    waterUse: RelativeLevel;
-    energyUse: RelativeLevel;
+    waterUse: RelativeLevel | null;
+    energyUse: RelativeLevel | null;
     safetyNotices: readonly string[];
   }
+
+  export interface PlanEvaluationInput {
+    mission: GarmentMission;
+    plan: StudentPlan;
+    symbols: ReadonlyMap<CareSymbolId, CareSymbol>;
+    options: ReadonlyMap<CareOptionId, CareOption>;
+  }
+
+  export type PlanInputValidationResult =
+    | { valid: true; input: PlanEvaluationInput }
+    | { valid: false; message: string };
+
+  export function validatePlanInput(input: unknown): PlanInputValidationResult;
   ```
 
 - [ ] **Step 1: 해석 피드백과 제약 교집합의 실패 테스트를 작성한다**
@@ -940,7 +956,7 @@ flowchart LR
   4. 선택한 옵션이 교집합 밖이면 `outside-limit`과 관련 표시 ID·손상 가능성 ID를 만든다.
   5. `requiresAcknowledgement` 표시를 확인하지 않았으면 `unread-restriction`을 만든다.
   6. 모든 필수 항목이 허용 범위이면 `status: 'ready'`, 하나라도 아니면 `status: 'revise'`를 반환한다.
-  7. 선택 카드의 상대 지표만 모아 물·에너지 수준을 `lower | medium | higher`로 반환한다.
+  7. 선택 카드의 상대 지표만 모아 물·에너지 수준을 `lower | medium | higher`로 반환한다. 세 단계 중 하나라도 비었거나 해석 불가능하면 `null`을 반환하며, UI는 `계획을 완성하면 확인할 수 있어요` 문구로 안내한다.
   8. 모든 반환값에 실제 라벨 우선과 보호자·교사 확인 안내를 포함한다.
 
   교집합 계산은 입력 배열을 변경하지 않고 새 배열을 반환하며, `Date`, 난수, 브라우저 API를 사용하지 않는다.
@@ -954,7 +970,7 @@ flowchart LR
 - [ ] **Step 6: 판정 엔진 커밋을 만든다**
 
   ```bash
-  git add src/domain/evaluationTypes.ts src/domain/evaluateInterpretation.ts src/domain/evaluateInterpretation.test.ts src/domain/evaluatePlan.ts src/domain/evaluatePlan.test.ts
+  git add src/domain/evaluationTypes.ts src/domain/validatePlanInput.ts src/domain/evaluateInterpretation.ts src/domain/evaluateInterpretation.test.ts src/domain/evaluatePlan.ts src/domain/evaluatePlan.test.ts
   git commit -m "feat: evaluate symbol meanings and care plans"
   ```
 

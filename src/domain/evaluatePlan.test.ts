@@ -5,6 +5,7 @@ import { missionById } from '../content/missions';
 import { makeEmptyPlan, makePlanFixture } from '../test/factories';
 import { evaluatePlan, resolveGarmentAllowedOptions } from './evaluatePlan';
 import type { CareOptionId, CareSymbol, CareSymbolId } from './careTypes';
+import type { CareOption } from './missionTypes';
 
 const inputFor = (missionId: Parameters<typeof makeEmptyPlan>[0], plan = makeEmptyPlan(missionId)) => ({
   mission: missionById.get(missionId)!,
@@ -238,5 +239,74 @@ describe('evaluatePlan', () => {
 
     expect(result.status).toBe('revise');
     expect(result.findings.some(({ status, stage }) => status === 'outside-limit' && stage === 'wash')).toBe(true);
+  });
+
+  it.each([
+    ['null input', null as unknown as Parameters<typeof evaluatePlan>[0]],
+    [
+      'null option map value',
+      {
+        ...inputFor('basic-t-shirt', makePlanFixture('basic-t-shirt', 'within-limits')),
+        options: new Map<CareOptionId, CareOption>(careOptionById).set('plan-wash-gentle-30', null as unknown as CareOption),
+      },
+    ],
+    [
+      'null symbol map value',
+      {
+        ...inputFor('basic-t-shirt', makePlanFixture('basic-t-shirt', 'within-limits')),
+        symbols: new Map<CareSymbolId, CareSymbol>(careSymbolById).set('care-wash-30-gentle', null as unknown as CareSymbol),
+      },
+    ],
+  ] as const)('returns a defensive invalid result for %s', (_label, malformedInput) => {
+    const result = evaluatePlan(malformedInput);
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+    expect(result.combinedAllowedOptions).toEqual({ wash: [], dry: [], iron: [] });
+    expect(result.waterUse).toBeNull();
+    expect(result.energyUse).toBeNull();
+    expect(result.safetyNotices.length).toBeGreaterThan(0);
+  });
+
+  it('rejects a symbol with a null risk list without throwing', () => {
+    const symbol = careSymbolById.get('care-wash-30-gentle')!;
+    const malformedSymbol = { ...symbol, riskIds: null } as unknown as CareSymbol;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(symbol.id, malformedSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
+
+  it('rejects non-Map catalog lookalikes without throwing', () => {
+    const input = inputFor('basic-t-shirt', makePlanFixture('basic-t-shirt', 'within-limits'));
+    const result = evaluatePlan({
+      ...input,
+      options: { get: () => undefined, has: () => false } as unknown as typeof input.options,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+    expect(result.combinedAllowedOptions).toEqual({ wash: [], dry: [], iron: [] });
+  });
+
+  it('rejects malformed nested option constraints structurally', () => {
+    const symbol = careSymbolById.get('care-wash-30-gentle')!;
+    const malformedSymbol = { ...symbol, allowedOptionIds: null } as unknown as CareSymbol;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(symbol.id, malformedSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
   });
 });
