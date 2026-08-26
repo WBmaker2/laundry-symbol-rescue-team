@@ -3,6 +3,7 @@ import type {
   CareStage,
   CareSymbol,
   CareSymbolId,
+  DamageRiskId,
   PlanningStage,
   RelativeLevel,
 } from './careTypes';
@@ -27,6 +28,13 @@ const stageLabels: Readonly<Record<PlanningStage, string>> = {
   iron: '다림질',
 };
 const relativeLevels: readonly RelativeLevel[] = ['lower', 'medium', 'higher'];
+const damageRiskIds: readonly DamageRiskId[] = [
+  'shrinkage',
+  'deformation',
+  'color-change',
+  'decoration-damage',
+  'heat-damage',
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -49,7 +57,7 @@ function isRelativeLevel(value: unknown): value is RelativeLevel {
 }
 
 function riskListIssue(value: unknown, source: string): string | null {
-  if (!Array.isArray(value) || value.some((riskId) => typeof riskId !== 'string')) {
+  if (!Array.isArray(value) || value.some((riskId) => !damageRiskIds.includes(riskId as DamageRiskId))) {
     return `${source}의 가능성 근거 목록이 올바르지 않아요.`;
   }
   return null;
@@ -119,6 +127,15 @@ function validateMapCatalogs(
   for (const [key, value] of symbols) {
     const issue = symbolShapeIssue(key, value);
     if (issue !== null) return issue;
+    const symbol = value as CareSymbol;
+    if (isPlanningStage(symbol.category)) {
+      for (const optionId of [...symbol.allowedOptionIds, ...symbol.forbiddenOptionIds]) {
+        const referenceIssue = optionReferenceIssue(optionId, symbol.category, options, `'${symbol.name}' 표시 조건`);
+        if (referenceIssue !== null) return referenceIssue;
+      }
+    } else if (symbol.allowedOptionIds.length > 0 || symbol.forbiddenOptionIds.length > 0) {
+      return `'${symbol.name}' 표시는 계획 단계 선택을 만들 수 없어요.`;
+    }
   }
   return null;
 }

@@ -309,4 +309,64 @@ describe('evaluatePlan', () => {
     expect(result.status).toBe('revise');
     expect(result.findings[0]?.status).toBe('invalid-input');
   });
+
+  it('rejects an unused symbol with a missing constraint option', () => {
+    const symbol = careSymbolById.get('care-iron-low')!;
+    const malformedSymbol = { ...symbol, allowedOptionIds: ['missing-option' as CareOptionId] } as unknown as CareSymbol;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(symbol.id, malformedSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
+
+  it('rejects an unused symbol constraint option from the wrong planning stage', () => {
+    const symbol = careSymbolById.get('care-iron-low')!;
+    const malformedSymbol = { ...symbol, allowedOptionIds: ['plan-wash-gentle-30' as CareOptionId] } as unknown as CareSymbol;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(symbol.id, malformedSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
+
+  it('rejects unknown symbol and option risk IDs in the full catalogs', () => {
+    const symbol = careSymbolById.get('care-iron-low')!;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(
+      symbol.id,
+      { ...symbol, riskIds: ['unknown-risk'] } as unknown as CareSymbol,
+    );
+    const symbolResult = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+    expect(symbolResult.status).toBe('revise');
+    expect(symbolResult.findings[0]?.status).toBe('invalid-input');
+
+    const option = careOptionById.get('plan-iron-low-with-adult')!;
+    const options = new Map<CareOptionId, CareOption>(careOptionById).set(
+      option.id,
+      { ...option, riskIds: ['unknown-risk'] } as unknown as CareOption,
+    );
+    const optionResult = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols: careSymbolById,
+      options,
+    });
+    expect(optionResult.status).toBe('revise');
+    expect(optionResult.findings[0]?.status).toBe('invalid-input');
+  });
 });
