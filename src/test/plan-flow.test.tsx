@@ -6,6 +6,14 @@ import { renderAppAtStep } from './renderApp';
 describe('Task 9 접근 가능한 관리 순서판', () => {
   afterEach(() => cleanup());
 
+  it('필수 행동 두 개에만 gi-pulse를 적용한다', () => {
+    const request = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'request' });
+    expect([...document.querySelectorAll('.gi-pulse')].map((node) => node.textContent?.trim())).toEqual(['표시 확대']);
+    request.unmount();
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
+    expect([...document.querySelectorAll('.gi-pulse')].map((node) => node.textContent?.trim())).toEqual(['관리 계획 확인']);
+  });
+
   it('카드를 선택한 뒤 단계 버튼으로 배치하고 드래그 없이 현재 계획을 갱신한다', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
@@ -37,7 +45,7 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
     }
     for (const checkbox of screen.getAllByRole('checkbox')) await user.click(checkbox);
     await user.click(screen.getByRole('button', { name: '관리 계획 확인' }));
-    expect(screen.getByRole('heading', { name: '손상 예보 준비 화면' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '손상 가능성 예보' })).toBeInTheDocument();
   });
 
   it('혼합 미션은 세 의류를 그룹에 배정하고 분리 근거 표시를 고르게 한다', () => {
@@ -95,6 +103,6 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
       await user.click(checkbox);
     }
     await user.click(screen.getByRole('button', { name: '관리 계획 확인' }));
-    expect(screen.getByRole('heading', { name: '손상 예보 준비 화면' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '손상 가능성 예보' })).toBeInTheDocument();
   });
 });

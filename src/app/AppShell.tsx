@@ -8,6 +8,7 @@ import { missionById } from '../content/missions';
 import type { SessionStep } from '../domain/sessionReducer';
 import { SymbolMagnifierScreen } from '../features/magnifier/SymbolMagnifierScreen';
 import { ManagementBoardScreen } from '../features/plan/ManagementBoardScreen';
+import { DamageForecastScreen } from '../features/forecast/DamageForecastScreen';
 import './app-shell.css';
 import '../styles/motion.css';
 
@@ -64,7 +65,23 @@ function StepContent({ step }: { step: SessionStep }) {
         />
       );
     }
-    case 'forecast': return <FutureStepPlaceholder step={step} title="손상 예보" />;
+    case 'forecast': {
+      if (state.missionId === null || state.initialEvaluation === null) {
+        throw new Error('손상 예보의 초기 평가가 없습니다.');
+      }
+      const mission = missionById.get(state.missionId);
+      if (!mission) throw new Error('손상 예보의 미션을 찾을 수 없습니다.');
+      return (
+        <DamageForecastScreen
+          mission={mission}
+          evaluation={state.initialEvaluation}
+          prediction={state.prediction}
+          predictionFeedback={state.predictionFeedback}
+          onSubmit={(selection, feedback) => dispatch({ type: 'SUBMIT_PREDICTION', selection, feedback })}
+          onShowSimulation={() => dispatch({ type: 'SHOW_SIMULATION' })}
+        />
+      );
+    }
     case 'simulation': return <FutureStepPlaceholder step={step} title="가상 관리" />;
     case 'revision': return <FutureStepPlaceholder step={step} title="계획 수정" />;
     case 'report': return <FutureStepPlaceholder step={step} title="구조 보고서" reportReady={state.revisedPlan !== null} />;

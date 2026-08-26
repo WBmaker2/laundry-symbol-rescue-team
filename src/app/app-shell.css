@@ -91,6 +91,93 @@
 .grouping-choice[aria-pressed='true'] { background: var(--color-accent); color: #fff; }
 .plan-message { margin: 0; padding: 0.75rem; border-left: 4px solid var(--color-accent); background: rgb(231 120 85 / 10%); }
 
+.forecast-screen {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid rgb(36 49 58 / 14%);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+
+.forecast-screen h2,
+.forecast-screen h3,
+.forecast-screen p { margin-block: 0; }
+
+.risk-card-grid,
+.evidence-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid rgb(36 49 58 / 22%);
+  border-radius: 0.9rem;
+}
+
+.risk-card-grid legend,
+.evidence-list legend { padding-inline: 0.25rem; font-weight: 800; }
+.risk-card-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+
+.risk-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: start;
+  min-height: 11rem;
+  padding: 0.85rem;
+  border: 2px solid rgb(36 49 58 / 24%);
+  border-radius: 0.8rem;
+  background: var(--color-card);
+}
+
+.risk-card.is-selected { border-color: var(--color-accent-dark); background: rgb(231 120 85 / 10%); }
+.risk-mark { display: grid; width: 2.7rem; height: 2.7rem; place-items: center; border: 2px solid var(--color-accent-dark); border-radius: 50%; color: var(--color-accent-dark); font-size: 1.5rem; font-weight: 800; }
+.risk-card-copy { display: grid; gap: 0.25rem; }
+.risk-card-copy h3 { font-size: 1rem; }
+.risk-card-copy p { color: var(--color-muted); font-size: 0.9rem; }
+.risk-possibility { color: var(--color-accent-dark) !important; font-weight: 800; }
+
+.risk-choice,
+.evidence-item {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.risk-choice { grid-column: 1 / -1; }
+.risk-choice input,
+.evidence-item input { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
+.risk-choice:focus-within,
+.evidence-item:focus-within { outline: 3px solid rgb(231 120 85 / 45%); outline-offset: 2px; }
+.evidence-list > p { color: var(--color-muted); }
+.evidence-item { align-items: flex-start; padding: 0.45rem; }
+.evidence-item > span { display: grid; gap: 0.2rem; }
+.evidence-description { color: var(--color-muted); font-size: 0.88rem; }
+.forecast-message,
+.forecast-feedback { padding: 0.8rem; border-left: 4px solid var(--color-accent); background: rgb(231 120 85 / 10%); }
+.forecast-feedback { display: grid; gap: 0.65rem; }
+.evidence-review { display: grid; gap: 0.55rem; }
+.evidence-review-button,
+.dialog-close-button,
+.simulation-action { min-height: 44px; width: fit-content; padding: 0.6rem 0.9rem; border: 2px solid var(--color-accent-dark); border-radius: 0.65rem; background: var(--color-card); color: var(--color-ink); cursor: pointer; }
+.simulation-action { background: var(--color-accent); color: #fff; font-weight: 800; }
+.simulation-action:disabled { cursor: not-allowed; opacity: 0.45; }
+.evidence-review-button:focus-visible,
+.dialog-close-button:focus-visible,
+.simulation-action:focus-visible { outline: 4px solid rgb(231 120 85 / 45%); outline-offset: 3px; }
+
+.symbol-review-dialog { position: fixed; inset: 0; z-index: 2; display: grid; place-items: center; padding: 1rem; background: rgb(36 49 58 / 55%); }
+.symbol-review-dialog-card { display: grid; gap: 0.8rem; width: min(100%, 42rem); max-height: 90vh; overflow: auto; padding: 1rem; border: 3px solid var(--color-accent-dark); border-radius: 1rem; background: var(--color-card); box-shadow: var(--shadow-card); }
+.symbol-review-dialog-card h3 { margin: 0; }
+
+@media (max-width: 40rem) {
+  .risk-card-grid { grid-template-columns: 1fr; }
+  .symbol-review-dialog-card .symbol-figure { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 40rem) {
   .plan-stage-list { grid-template-columns: 1fr; }
 }

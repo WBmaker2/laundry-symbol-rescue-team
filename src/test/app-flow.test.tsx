@@ -434,15 +434,16 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
   });
 });
 
-describe('Task 9 접근 가능한 관리 순서판', () => {
-  it('필수 행동 두 개에만 gi-pulse를 적용한다', () => {
-    const request = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'request' });
-    expect([...document.querySelectorAll('.gi-pulse')].map((node) => node.textContent?.trim()))
-      .toEqual(['표시 확대']);
-    request.unmount();
+describe('Task 10 근거 기반 손상 예보', () => {
+  afterEach(() => cleanup());
 
-    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
-    expect([...document.querySelectorAll('.gi-pulse')].map((node) => node.textContent?.trim()))
-      .toEqual(['관리 계획 확인']);
+  it('asks for a possible outcome and a related label before showing feedback', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({ missionId: 'decorated-top', step: 'forecast', scenario: 'outside-limits' });
+    await user.click(screen.getByRole('checkbox', { name: /장식 손상 가능성/ }));
+    await user.click(screen.getByRole('checkbox', { name: /다림질 제한 표시를 근거로 선택/ }));
+    await user.click(screen.getByRole('button', { name: '손상 예보 확인' }));
+    expect(screen.getByRole('status')).toHaveTextContent(/가능성/);
+    expect(screen.getByRole('status')).toHaveTextContent(/표시/);
   });
 });
