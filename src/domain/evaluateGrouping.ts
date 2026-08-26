@@ -104,7 +104,10 @@ export function evaluateGrouping(input: {
   if (!mission || !grouping || !symbols || !options || !(symbols instanceof Map) || !(options instanceof Map)) {
     return invalidResult('미션과 옷 묶음 자료를 다시 확인해 주세요.');
   }
-  if (!Array.isArray(mission.garments) || mission.id !== 'mixed-load' || mission.requiresGrouping !== true
+  if (typeof mission !== 'object' || mission === null || !Array.isArray(mission.garments)
+    || !mission.garments.every((garment) => Boolean(garment) && typeof garment === 'object'
+      && !Array.isArray(garment) && typeof garment.id === 'string')
+    || mission.id !== 'mixed-load' || mission.requiresGrouping !== true
     || mission.garments.length !== mixedGarmentIds.length
     || mission.garments.map(({ id }) => id).some((id, index) => id !== mixedGarmentIds[index])) {
     return invalidResult('혼합 미션은 지정된 세 벌과 그룹 단계가 필요해요.');
@@ -135,27 +138,30 @@ export function evaluateGrouping(input: {
   const emptyStages = together.length > 1
     ? stages.filter((stage) => commonAllowedOptions[stage].length === 0)
     : [];
-  const allAllowedOptions = separate.length > 0
-    ? commonOptions([...together, ...separate], symbols, options)
-    : commonAllowedOptions;
-  const addedEmptyStages = separate.length > 0
-    ? stages.filter((stage) => commonAllowedOptions[stage].length > 0 && allAllowedOptions[stage].length === 0)
-    : [];
   const stageCauses = emptyStages.flatMap((stage) => symbolsOn(together, symbols)
     .filter((symbol) => symbol.category === stage)
     .map((symbol) => symbol.id));
-  const addedStageCauses = addedEmptyStages.flatMap((stage) => symbolsOn(separate, symbols)
-    .filter((symbol) => symbol.category === stage)
-    .map((symbol) => symbol.id));
-  const professionalCauses = symbolsOn([...professionalTogether, ...separate], symbols)
-    .filter((symbol) => symbol.category === 'professional')
-    .map((symbol) => symbol.id);
-  const blockingSymbols = unique([...professionalCauses, ...stageCauses, ...addedStageCauses]);
-  const separatedCauses = unique(symbolsOn(separate, symbols)
-    .filter((symbol) => symbol.category === 'professional' || addedStageCauses.includes(symbol.id))
-    .map((symbol) => symbol.id));
+  const separatedCauseSets = separate.map((garment) => {
+    const withGarment = commonOptions([...together, garment], symbols, options);
+    const addedStages = stages.filter((stage) => commonAllowedOptions[stage].length > 0
+      && withGarment[stage].length === 0);
+    return {
+      garmentId: garment.id,
+      symbolIds: unique(symbolsOn([garment], symbols)
+        .filter((symbol) => symbol.category === 'professional'
+          || addedStages.includes(symbol.category as PlanningStage))
+        .map((symbol) => symbol.id)),
+    };
+  });
+  const separatedCauses = unique(separatedCauseSets.flatMap(({ symbolIds }) => symbolIds));
+  const blockingSymbols = unique([
+    ...symbolsOn(professionalTogether, symbols)
+      .filter((symbol) => symbol.category === 'professional')
+      .map((symbol) => symbol.id),
+    ...stageCauses,
+  ]);
 
-  if (professionalTogether.length > 0 || emptyStages.length > 0 || addedEmptyStages.length > 0) {
+  if (professionalTogether.length > 0 || emptyStages.length > 0) {
     findings.push(finding(
       'separation-needed',
       unique([...professionalTogether.map(({ id }) => id), ...together.map(({ id }) => id)]),
@@ -167,13 +173,18 @@ export function evaluateGrouping(input: {
   }
 
   const reasons = grouping.reasonSymbolIds;
-  const causativeSymbols = separate.length > 0 ? separatedCauses : blockingSymbols;
-  const hasReason = reasons.length > 0 && reasons.every((symbolId) => causativeSymbols.includes(symbolId));
-  if (separate.length > 0 && !hasReason) {
+  const coveredGarments = separatedCauseSets.filter(({ symbolIds }) => reasons.some((reason) => symbolIds.includes(reason)));
+  const uncoveredGarments = separatedCauseSets
+    .filter(({ garmentId }) => !coveredGarments.some(({ garmentId: coveredId }) => coveredId === garmentId));
+  const reasonsBelongToUnion = reasons.length > 0 && reasons.every((reason) => separatedCauses.includes(reason));
+  if (separate.length > 0 && (!reasonsBelongToUnion || uncoveredGarments.length > 0)) {
+    const missingGarmentIds = uncoveredGarments.length > 0
+      ? uncoveredGarments.map(({ garmentId }) => garmentId)
+      : separate.map(({ id }) => id);
     findings.push(finding(
       'missing-reason',
-      grouping.separateGarmentIds,
-      causativeSymbols,
+      missingGarmentIds,
+      separatedCauses,
       '따로 살펴볼 옷의 실제 제한 표시를 근거로 골라 주세요.',
     ));
   } else if (separate.length === 0 && professionalTogether.length === 0 && emptyStages.length === 0 && reasons.length > 0) {

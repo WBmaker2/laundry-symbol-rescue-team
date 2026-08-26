@@ -1080,8 +1080,8 @@ flowchart LR
 
   - `togetherGarmentIds`와 `separateGarmentIds`가 중복 없이 미션의 3벌을 모두 포함하는가.
   - `resolveGarmentAllowedOptions()`의 결과를 사용해 함께 둔 의류 사이에 각 단계의 공통 허용 옵션이 하나 이상 있는가.
-  - 전문 관리 또는 도움 요청 표시가 있는 의류가 일반 묶음에서 분리되었는가.
-  - `reasonSymbolIds`가 실제 분리 원인이 된 표시를 하나 이상 가리키는가.
+  - 전문 관리 표시가 현재 함께 둔 묶음에 남아 있거나, 함께 둔 묶음 자체의 단계 공통 허용 집합이 비어 있으면 `separation-needed`를 낸다. 이미 분리한 의류를 다시 넣었을 때 생기는 충돌만으로는 이 코드를 내지 않는다.
+  - 각 `separateGarmentIds` 의류마다 전문 관리 표시 또는 그 의류를 추가할 때 비어지는 단계의 표시를 원인 집합으로 만들고, 모든 분리 의류가 자기 원인 집합의 선택 이유를 하나 이상 가져야 한다. 전체 선택 이유는 이 원인들의 합집합 안에 있어야 하며, 누락된 의류는 `missing-reason`으로 지목한다.
 
   결과 코드는 `invalid-membership | separation-needed | missing-reason | compatible-group` 네 가지로 제한한다.
 

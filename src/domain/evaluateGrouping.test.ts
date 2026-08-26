@@ -228,8 +228,8 @@ describe('evaluateGrouping', () => {
       options: careOptionById,
     });
 
-    expect(result.status).toBe('revise');
-    expect(result.findings.some(({ code }) => code === 'separation-needed')).toBe(true);
+    expect(result.status).toBe('ready');
+    expect(result.findings.some(({ code }) => code === 'compatible-group')).toBe(true);
     expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(false);
   });
 
@@ -260,5 +260,105 @@ describe('evaluateGrouping', () => {
     expect(notGrouping.findings[0]?.code).toBe('invalid-membership');
     expect(wrongGarments.status).toBe('revise');
     expect(wrongGarments.findings[0]?.code).toBe('invalid-membership');
+  });
+
+  it.each([
+    ['null garment', null],
+    ['undefined garment', undefined],
+  ] as const)('fails closed for a %s before projecting IDs', (_label, malformedGarment) => {
+    const mission = missionById.get('mixed-load')!;
+    const malformedMission = {
+      ...mission,
+      garments: [mission.garments[0], malformedGarment, mission.garments[2]],
+    } as unknown as typeof mission;
+    const result = evaluateGrouping({
+      mission: malformedMission,
+      grouping: makePlanFixture('mixed-load', 'within-limits').grouping!,
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.code).toBe('invalid-membership');
+  });
+
+  it('requires causal coverage for every separated garment', () => {
+    const mission = missionById.get('mixed-load')!;
+    const [cotton, sportswear, scarf] = mission.garments;
+    const result = evaluateGrouping({
+      mission,
+      grouping: {
+        togetherGarmentIds: [sportswear!.id],
+        separateGarmentIds: [cotton!.id, scarf!.id],
+        reasonSymbolIds: ['care-professional'],
+      },
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    const missing = result.findings.find(({ code }) => code === 'missing-reason');
+    expect(missing?.garmentIds).toEqual([cotton!.id]);
+    expect(missing?.feedback).toMatch(/실제 제한 표시/);
+  });
+
+  it('accepts an already-separated garment whose stage conflict explains its separation', () => {
+    const mission = missionById.get('mixed-load')!;
+    const [first, second, third] = mission.garments;
+    const stageLimitedMission = {
+      ...mission,
+      garments: [first, second, {
+        ...third,
+        symbolIds: ['care-flat-dry'],
+        materialAllowedOptionIdsByStage: {
+          ...third!.materialAllowedOptionIdsByStage,
+          dry: ['plan-dry-flat'],
+        },
+      }],
+    } as unknown as typeof mission;
+    const result = evaluateGrouping({
+      mission: stageLimitedMission,
+      grouping: {
+        togetherGarmentIds: [first!.id, second!.id],
+        separateGarmentIds: [third!.id],
+        reasonSymbolIds: ['care-flat-dry'],
+      },
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('ready');
+    expect(result.findings.some(({ code }) => code === 'compatible-group')).toBe(true);
+    expect(result.findings.some(({ code }) => code === 'separation-needed')).toBe(false);
+    expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(false);
+  });
+
+  it('still asks for separation when the current together group itself has an empty stage', () => {
+    const mission = missionById.get('mixed-load')!;
+    const [first, second, third] = mission.garments;
+    const stageLimitedMission = {
+      ...mission,
+      garments: [first, second, {
+        ...third,
+        symbolIds: ['care-flat-dry'],
+        materialAllowedOptionIdsByStage: {
+          ...third!.materialAllowedOptionIdsByStage,
+          dry: ['plan-dry-flat'],
+        },
+      }],
+    } as unknown as typeof mission;
+    const result = evaluateGrouping({
+      mission: stageLimitedMission,
+      grouping: {
+        togetherGarmentIds: [first!.id, second!.id, third!.id],
+        separateGarmentIds: [],
+        reasonSymbolIds: [],
+      },
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ code }) => code === 'separation-needed')).toBe(true);
   });
 });
