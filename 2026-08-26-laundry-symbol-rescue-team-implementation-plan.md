@@ -133,6 +133,7 @@ laundry-symbol-rescue-team/
 │   ├── app/
 │   │   ├── AppShell.tsx
 │   │   ├── LearnerSessionProvider.tsx
+│   │   ├── LearnerSessionProvider.test.tsx
 │   │   └── useLearnerSession.ts
 │   ├── components/ui/
 │   │   ├── ActionButton.tsx
@@ -1110,10 +1111,11 @@ flowchart LR
 - Create: `src/domain/sessionReducer.ts`
 - Create: `src/domain/sessionReducer.test.ts`
 - Create: `src/app/LearnerSessionProvider.tsx`
+- Create: `src/app/LearnerSessionProvider.test.tsx`
 - Create: `src/app/useLearnerSession.ts`
 
 **Interfaces:**
-- Consumes: `MissionId`, `CareSymbolId`, `StudentPlan`, `PlanEvaluation`, `PredictionSelection`, `PredictionFeedback`.
+- Consumes: `MissionId`, `CareSymbolId`, `StudentPlan`, `PlanEvaluation`, `GroupingEvaluation`, `PredictionSelection`, `PredictionFeedback`, `evaluatePlan()`, `evaluateGrouping()`, `evaluatePrediction()`.
 - Produces: `LearnerSession`, `SymbolInterpretationAttempt`, `SessionAction`, `initialLearnerSession`, `sessionReducer()`, `LearnerSessionProvider({ children, initialState? })`, `useLearnerSession()`.
 
   ```ts
@@ -1129,10 +1131,12 @@ flowchart LR
     interpretations: readonly SymbolInterpretationAttempt[];
     initialPlan: StudentPlan | null;
     initialEvaluation: PlanEvaluation | null;
+    initialGroupingEvaluation: GroupingEvaluation | null;
     prediction: PredictionSelection | null;
     predictionFeedback: PredictionFeedback | null;
     revisedPlan: StudentPlan | null;
     revisedEvaluation: PlanEvaluation | null;
+    revisedGroupingEvaluation: GroupingEvaluation | null;
     revisionEvidence: RevisionEvidence | null;
   }
 
@@ -1154,7 +1158,7 @@ flowchart LR
     | { type: 'SELECT_MISSION'; missionId: MissionId }
     | { type: 'OPEN_MAGNIFIER' }
     | { type: 'RECORD_INTERPRETATION'; attempt: SymbolInterpretationAttempt }
-    | { type: 'SUBMIT_INITIAL_PLAN'; plan: StudentPlan; evaluation: PlanEvaluation }
+    | { type: 'SUBMIT_INITIAL_PLAN'; plan: StudentPlan; evaluation: PlanEvaluation; groupingEvaluation: GroupingEvaluation | null }
     | { type: 'SUBMIT_PREDICTION'; selection: PredictionSelection; feedback: PredictionFeedback }
     | { type: 'SHOW_SIMULATION' }
     | { type: 'START_REVISION' }
@@ -1162,6 +1166,7 @@ flowchart LR
         type: 'SUBMIT_REVISION';
         plan: StudentPlan;
         evaluation: PlanEvaluation;
+        groupingEvaluation: GroupingEvaluation | null;
         evidence: RevisionEvidence;
       }
     | { type: 'RESTART_MISSION' };
@@ -1213,6 +1218,8 @@ flowchart LR
 
   `RESTART_MISSION`만 `request`로 돌아가며 모든 학생 데이터를 초기값으로 되돌린다. `SUBMIT_INITIAL_PLAN`은 현재 미션에 필요한 모든 표시에서 `isCorrect: true`인 시도가 하나 이상 있을 때만 허용한다. `SUBMIT_REVISION`은 `evaluation.status === 'ready'`, 근거 표시 1개 이상, 변경 단계와 실제 plan diff의 일치를 검사한다. 최초 계획이 이미 허용 범위이면 `confirm-current-plan`을 선택할 수 있지만, 그 밖의 수정 이유는 단계 또는 그룹 배정이 실제로 달라야 한다. reducer는 브라우저 저장소를 읽거나 쓰지 않고 입력 상태에서 새 객체를 반환한다. 잘못된 단계의 action은 한국어 오류 메시지를 가진 `Error`를 던져 개발 중 흐름 오류를 즉시 드러낸다.
 
+  제출된 초기·수정 계획은 현재 미션과 catalog로 `evaluatePlan()`을 다시 계산하고, 제출 평가 전체를 canonical 결과와 구조 비교한 뒤 canonical 결과만 저장한다. 혼합 미션은 같은 방식으로 `evaluateGrouping()`을 재계산·비교하며, 비혼합 미션의 grouping evaluation은 반드시 `null`이다. 예측은 저장된 canonical 초기 평가와 `evaluatePrediction()`으로 다시 계산한다. mixed-load의 완료는 계획과 grouping 평가가 모두 `ready`여야 하며, 초기 plan이 ready여도 grouping이 revise이면 실제 grouping 변경 전 `confirm-current-plan`을 허용하지 않는다.
+
 - [ ] **Step 4: Context provider와 안전한 hook을 구현한다**
 
   ```tsx
@@ -1229,14 +1236,14 @@ flowchart LR
 
 - [ ] **Step 5: 상태 테스트를 통과시킨다**
 
-  Run: `npm test -- src/domain/sessionReducer.test.ts`
+  Run: `npm test -- src/domain/sessionReducer.test.ts src/app/LearnerSessionProvider.test.tsx`
 
   Expected: 정상 순서, 올바른 표시 해석 전 계획 차단, 단계 건너뛰기 거부, 초기/수정 계획과 수정 근거 보존, 허용 범위 밖 수정 거부, 재시작 초기화, 입력 불변성 테스트 전체 PASS.
 
 - [ ] **Step 6: 세션 상태 커밋을 만든다**
 
   ```bash
-  git add src/domain/sessionReducer.ts src/domain/sessionReducer.test.ts src/app/LearnerSessionProvider.tsx src/app/useLearnerSession.ts
+  git add src/domain/sessionReducer.ts src/domain/sessionReducer.test.ts src/app/LearnerSessionProvider.tsx src/app/LearnerSessionProvider.test.tsx src/app/useLearnerSession.ts
   git commit -m "feat: add guarded learner session flow"
   ```
 
@@ -1389,7 +1396,7 @@ flowchart LR
 - Modify: `src/test/app-flow.test.tsx`
 
 **Interfaces:**
-- Consumes: `careOptions`, `makeEmptyPlan()`, `evaluatePlan()`, `SUBMIT_INITIAL_PLAN`, `CareOptionId`, `PlanningStage`.
+- Consumes: `careOptions`, `makeEmptyPlan()`, `evaluatePlan()`, `evaluateGrouping()`, `SUBMIT_INITIAL_PLAN`, `CareOptionId`, `PlanningStage`, `GroupingEvaluation`.
 - Produces: `ActionButton({ emphasis, ...buttonProps })`, `CareOptionCard`, `CurrentPlanSummary`, `ManagementBoardScreen`.
 
   ```ts
@@ -1448,7 +1455,7 @@ flowchart LR
 
 - [ ] **Step 5: 확인 시 판정과 초점 이동을 구현한다**
 
-  `관리 계획 확인`은 세 단계가 비었으면 가장 앞선 빈 단계 제목으로 초점을 이동하고, 모두 있으면 `evaluatePlan()`과 필요한 경우 `evaluateGrouping()`을 호출해 `SUBMIT_INITIAL_PLAN`을 dispatch한다. 판정 상태는 화면 컴포넌트가 다시 계산하지 않고 reducer에 저장한다.
+  `관리 계획 확인`은 세 단계가 비었으면 가장 앞선 빈 단계 제목으로 초점을 이동하고, 모두 있으면 `evaluatePlan()`과 필요한 경우 `evaluateGrouping()`을 호출해 canonical `groupingEvaluation`을 포함한 `SUBMIT_INITIAL_PLAN`을 dispatch한다. 비혼합 미션은 `groupingEvaluation: null`을 전달한다. 판정 상태는 화면 컴포넌트가 다시 계산하지 않고 reducer에 저장한다.
 
 - [ ] **Step 6: 관리 순서판 테스트를 통과시킨다**
 
@@ -1535,7 +1542,7 @@ flowchart LR
 - Modify: `src/test/app-flow.test.tsx`
 
 **Interfaces:**
-- Consumes: `initialPlan`, `initialEvaluation`, `predictionFeedback`, `RevisionEvidence`, `START_REVISION`, `SUBMIT_REVISION`.
+- Consumes: `initialPlan`, `initialEvaluation`, `initialGroupingEvaluation`, `predictionFeedback`, `RevisionEvidence`, `START_REVISION`, `SUBMIT_REVISION`, revised `GroupingEvaluation`.
 - Produces: `BeforeAfterComparison`, `VirtualCareScreen`, `RevisionScreen`, `ManagementBoardScreen`의 `mode: 'initial' | 'revision'` prop.
 
 - [ ] **Step 1: 가상 결과와 수정 완료의 실패 테스트를 작성한다**
@@ -1583,7 +1590,7 @@ flowchart LR
 
 - [ ] **Step 5: 최초 계획을 보존한 수정 화면을 구현한다**
 
-  `RevisionScreen`은 최초 계획과 발견을 읽기 전용 영역에 표시하고, `ManagementBoardScreen mode="revision"`으로 새 계획을 만든다. 학생은 `RevisionReasonId` 중 하나와 관련 표시를 선택한다. 최초 평가가 `revise`이면 단계 또는 그룹 배정이 하나 이상 실제로 달라야 하며, `changedStages`는 plan diff와 같아야 한다. 최초 평가가 `ready`이면 `confirm-current-plan`으로 근거를 재확인할 수 있다. 보고서로 가기 전 `evaluatePlan()`을 다시 실행해 `status: 'ready'`, 세 단계, 추가 제한, 수정 근거를 모두 확인한다.
+  `RevisionScreen`은 최초 계획과 발견을 읽기 전용 영역에 표시하고, `ManagementBoardScreen mode="revision"`으로 새 계획을 만든다. 학생은 `RevisionReasonId` 중 하나와 관련 표시를 선택한다. 최초 평가가 `revise`이면 단계 또는 그룹 배정이 하나 이상 실제로 달라야 하며, `changedStages`는 plan diff와 같아야 한다. `groupingChanged()`는 together/separate 배정뿐 아니라 선택한 `GroupingChoice.reasonSymbolIds`의 실제 인과 근거 수정도 grouping 변경으로 본다. 최초 계획과 grouping 평가가 모두 `ready`이면 `confirm-current-plan`으로 근거를 재확인할 수 있고, mixed-load에서 grouping이 revise이면 실제 grouping 변경 전 확인할 수 없다. 보고서로 가기 전 `evaluatePlan()`과 필요한 경우 `evaluateGrouping()`을 다시 실행해 계획·묶음 평가가 모두 `ready`, 세 단계, 추가 제한, 수정 근거를 충족할 때만 `groupingEvaluation`을 포함한 `SUBMIT_REVISION`을 dispatch한다.
 
 - [ ] **Step 6: 가상 결과·수정 테스트를 통과시킨다**
 
