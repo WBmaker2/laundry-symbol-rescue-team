@@ -79,12 +79,22 @@ export interface CareSymbol {
 export type ContentValidationCode =
   | 'symbol-count'
   | 'duplicate-symbol-id'
+  | 'missing-required-symbol-id'
+  | 'unexpected-symbol-id'
   | 'missing-source'
   | 'unapproved-source'
+  | 'invalid-source-record'
+  | 'duplicate-source-id'
+  | 'missing-required-provenance'
   | 'review-date-mismatch'
   | 'missing-accessible-text'
   | 'missing-display-kind'
+  | 'unlicensed-display-kind'
+  | 'meaning-choice-count'
+  | 'invalid-meaning-choice'
   | 'missing-correct-choice'
+  | 'invalid-constraint-id'
+  | 'invalid-acknowledgement'
   | 'empty-constraint-set';
 
 export interface ContentValidationIssue {

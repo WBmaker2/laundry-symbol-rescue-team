@@ -54,20 +54,6 @@ export const sources = [
     status: 'approved',
   },
   {
-    id: 'kats-home-textile-annex-1',
-    publisher: '국가기술표준원·국가법령정보센터',
-    title: '안전기준 가정용 섬유제품 부속서 1 (Textile products)',
-    officialUrl:
-      'https://www.law.go.kr/LSW/flDownload.do?bylClsCd=200209&flNm=%5B%EB%B6%80%EC%86%8D%EC%84%9C+1%5D+%EA%B0%80%EC%A0%95%EC%9A%A9+%EC%84%AC%EC%9C%A0%EC%A0%9C%ED%92%88&flSeq=154756305',
-    standardOrDocumentId: '안전기준 가정용 섬유제품 부속서 1',
-    editionOrPublishedAt: 'PDF 개정 이력 2024-03-07 (고시번호 표기: 국가기술표준원고시 제2024-XXXX호)',
-    accessedAt: '2026-08-26',
-    reviewedAt: '2026-08-26',
-    coverage:
-      '가정용 섬유제품의 표시사항·방법과 KS K 0021 인용 관계. 본문 적용 범위는 만 14세 이상 제품이므로 아동 제품 법정 적용으로 확대하지 않음.',
-    status: 'approved',
-  },
-  {
     id: 'katri-care-label-cardnews',
     publisher: 'KATRI시험연구원',
     title: '[카드뉴스 5호] 케어라벨(세탁기호) 어떻게 읽나요?',

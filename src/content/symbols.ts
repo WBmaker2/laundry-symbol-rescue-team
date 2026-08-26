@@ -186,7 +186,7 @@ export const careSymbols = [
     reviewedAt,
     meaningOptions: [
       { id: 'meaning-iron-low', label: '보호자와 낮은 온도 범위 확인하기' },
-      { id: 'meaning-iron-high', label: '높은 온도로 다림질하기' },
+      { id: 'meaning-iron-high', label: '높은 온도도 괜찮다는 오해' },
       { id: 'meaning-no-iron', label: '다림질하지 않기' },
     ],
     correctMeaningOptionId: 'meaning-iron-low',
@@ -210,7 +210,7 @@ export const careSymbols = [
     meaningOptions: [
       { id: 'meaning-no-iron', label: '다림질하지 않기' },
       { id: 'meaning-iron-low', label: '보호자와 낮은 온도 범위 확인하기' },
-      { id: 'meaning-iron-high', label: '높은 온도로 다림질하기' },
+      { id: 'meaning-iron-high', label: '높은 온도도 괜찮다는 오해' },
     ],
     correctMeaningOptionId: 'meaning-no-iron',
     allowedOptionIds: noIronAllowed,
