@@ -1,9 +1,10 @@
+import { LearnerSessionProvider } from './app/LearnerSessionProvider';
+import { AppShell } from './app/AppShell';
+
 export function App() {
   return (
-    <main>
-      <h1>세탁표시 구조대</h1>
-      <p>가상 옷의 재료와 취급 표시를 함께 읽어 관리 순서를 정해 보세요.</p>
-      <p>실제 옷에서는 제품 라벨과 제조사 안내, 보호자·교사의 안내를 먼저 확인하세요.</p>
-    </main>
+    <LearnerSessionProvider>
+      <AppShell />
+    </LearnerSessionProvider>
   );
 }
