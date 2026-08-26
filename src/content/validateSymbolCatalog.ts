@@ -19,13 +19,14 @@ export function isRenderableSymbol(value: unknown): value is CareSymbol {
 export function validatePublishedSymbolCatalog(symbolMap: ReadonlyMap<string, unknown>): boolean {
   if (symbolMap.size !== careSymbolIds.length) return false;
   const symbols: CareSymbol[] = [];
-  for (const id of careSymbolIds) {
-    const symbol = symbolMap.get(id);
-    if (!isRenderableSymbol(symbol)) return false;
+  for (const mapKey of careSymbolIds) {
+    const symbol = symbolMap.get(mapKey);
+    if (!isRenderableSymbol(symbol) || symbol.id !== mapKey) return false;
     symbols.push(symbol);
   }
-  for (const key of symbolMap.keys()) {
-    if (typeof key !== 'string' || !careSymbolIds.includes(key as CareSymbol['id'])) return false;
+  for (const [mapKey, symbol] of symbolMap) {
+    if (typeof mapKey !== 'string' || !careSymbolIds.includes(mapKey as CareSymbol['id'])) return false;
+    if (!isRenderableSymbol(symbol) || symbol.id !== mapKey) return false;
   }
   return validatePublishedContent({ sources, symbols }).length === 0;
 }

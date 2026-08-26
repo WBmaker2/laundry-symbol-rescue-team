@@ -543,6 +543,7 @@ flowchart LR
     categoryHint: string;
     shortDescription: string;
     accessibleDescription: string;
+    provenanceNotes: string;
     assetPath: `/symbols/${string}.svg`;
     sourceIds: readonly string[];
     reviewedAt: string;
@@ -1335,6 +1336,11 @@ flowchart LR
 - Create: `src/domain/validateCareOption.ts`
 - Modify: `src/domain/validatePlanInput.ts` (shared mission/garment contract)
 - Modify: `src/content/validateContent.ts`, `src/content/symbols.ts`, `src/domain/careTypes.ts` (shared per-symbol publication contract and provenance notes)
+- Modify: `src/content/validateSymbolCatalog.ts` (canonical Map key and `CareSymbol.id` agreement)
+- Create: `src/content/validateSymbolCatalog.test.ts`
+- Create: `scripts/pages-assets-smoke.mjs`
+- Modify: `package.json` (Pages asset smoke command in the local check)
+- Modify: `vite.config.ts` (relative `base: './'` for Pages subpaths)
 - Modify: `src/app/AppShell.tsx`
 - Modify: `src/styles/layout.css` (controller ruling: Task 8 component layout and high-contrast presentation)
 - Modify: `src/test/app-flow.test.tsx`
@@ -1342,7 +1348,9 @@ flowchart LR
 
 **Interfaces:**
 - Consumes: `CareSymbol`, `evaluateInterpretation()`, `RECORD_INTERPRETATION`, `careSymbolById`, `missionById`.
+- Type contract: `CareSymbol` includes the required `provenanceNotes: string` field; all references use the exact `CareSymbol` name.
 - Validation boundary: `validatePublishedSymbolRecord()` in `validateContent.ts` is the single per-symbol contract used by both `validatePublishedContent()` and direct `SymbolFigure` rendering; it checks exact ISO review dates, placeholder-free provenance notes/text, canonical source IDs without duplicates, learning-icon provenance, meaning choices, constraints, acknowledgements, risks, and exact `/symbols/{id}.svg` assets. `validatePublishedSymbolCatalog()` checks the complete published symbol Map; `validateMissionCatalog()` checks the canonical five-mission Map, key/ID agreement, full mission/garment fields, and symbol/material-option references. `validateCareOptionCatalog()` and `validateCareOptionShape()` enforce the canonical option Map, key/ID agreement, non-empty descriptions, safety boolean, resource levels, and risk IDs; `validatePlanInput()` and `validateMissionCatalog()` share these rules. Both the screen and `SymbolFigure` fail closed before rendering unsafe or incomplete content. `validateMissionShape()` and `validateGarmentShape()` are shared with `validatePlanInput()`.
+- Local report: `.superpowers/sdd/2026-08-26-laundry-symbol-rescue-team-implementation-plan/task-8-report.md` is updated locally for evidence and is never included in the Git commit.
 - Produces: `SymbolFigure({ symbol, expanded })`, `CareSymbolCard({ symbol, attempt, onChoose })`, `SymbolMagnifierScreen`.
 
 - [ ] **Step 1: 문자 설명·뜻 후보·확대 보기의 실패 테스트를 작성한다**
@@ -1362,11 +1370,13 @@ flowchart LR
   });
   ```
 
+  `validateSymbolCatalog.test.ts`에는 정상 심볼 두 개의 값을 서로 다른 canonical key에 교환했을 때 `validatePublishedSymbolCatalog()`가 `false`를 반환하는 회귀 테스트를 추가한다. `scripts/pages-assets-smoke.mjs`는 빌드된 `dist/index.html`의 script/link/image 참조가 모두 `./` 상대 경로인지, 8개 `symbols/*.svg`가 존재하는지, 심볼 URL이 중첩 Pages 경로에서 유지되는지 확인한다.
+
 - [ ] **Step 2: 확대경 테스트가 구현 부재로 실패하는지 확인한다**
 
-  Run: `npm test -- src/test/app-flow.test.tsx -t "문자 설명|meaning choice"`
+  Run: `npm test -- src/test/app-flow.test.tsx -t "문자 설명|meaning choice"`, `npm test -- src/content/validateSymbolCatalog.test.ts`, `npm run build && npm run test:pages-assets`
 
-  Expected: FAIL. 기호 이미지, 표시 구분, 뜻 후보 또는 결과 status를 찾지 못한다.
+  Expected: 새 canonical 회귀 테스트는 key/id 교환을 검출해 FAIL하고, 빌드 전 `base`가 없으면 Pages asset smoke가 절대 경로를 검출해 FAIL한다. 기존 확대경 테스트는 이미 구현된 계약을 계속 확인한다.
 
 - [ ] **Step 3: SymbolFigure와 카드 의미 선택을 최소 구현한다**
 
@@ -1380,14 +1390,14 @@ flowchart LR
 
 - [ ] **Step 5: 확대경 테스트를 통과시킨다**
 
-  Run: `npm test -- src/domain/evaluateInterpretation.test.ts src/test/app-flow.test.tsx`
+  Run: `npm test -- src/domain/evaluateInterpretation.test.ts src/content/validateSymbolCatalog.test.ts src/test/app-flow.test.tsx`, `npm run build && npm run test:pages-assets`
 
-  Expected: 기호별 문자 설명, 용어 도움, 표시 구분, 확대 보기, 키보드 radio, 정답/오답 시도 보존, 모든 표시의 올바른 해석 전 진행 차단 테스트 PASS.
+  Expected: 기호별 문자 설명, 용어 도움, 표시 구분, 확대 보기, 키보드 radio, 정답/오답 시도 보존, 모든 표시의 올바른 해석 전 진행 차단, canonical key/id 교환 거부, Pages 하위 경로 asset smoke 테스트 PASS.
 
 - [ ] **Step 6: 표시 확대경 커밋을 만든다**
 
   ```bash
-  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/content/validateContent.ts src/content/symbols.ts src/domain/careTypes.ts src/content/validateSymbolCatalog.ts src/content/validateMissionCatalog.ts src/domain/validateMissionInput.ts src/domain/validateCareOption.ts src/domain/validatePlanInput.ts src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
+  git add src/components/ui/SymbolFigure.tsx src/features/magnifier/CareSymbolCard.tsx src/features/magnifier/SymbolMagnifierScreen.tsx src/content/validateContent.ts src/content/symbols.ts src/domain/careTypes.ts src/content/validateSymbolCatalog.ts src/content/validateSymbolCatalog.test.ts src/content/validateMissionCatalog.ts src/domain/validateMissionInput.ts src/domain/validateCareOption.ts src/domain/validatePlanInput.ts src/app/AppShell.tsx src/styles/layout.css src/test/app-flow.test.tsx src/vite-env.d.ts scripts/pages-assets-smoke.mjs package.json vite.config.ts 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
   git commit -m "feat: add accessible symbol interpretation"
   ```
 
@@ -2224,8 +2234,9 @@ flowchart LR
 | 타입 검사 | `npm run typecheck` | TypeScript 오류 0개 |
 | 단위·통합 테스트 | `npm test` | 콘텐츠·도메인·React 테스트 전체 PASS |
 | 프로덕션 빌드 | `npm run build` | `dist/index.html`과 로컬 assets 생성 |
+| Pages 자산 smoke | `npm run test:pages-assets` | `dist/index.html`의 상대 script/link/image 참조와 8개 하위 경로 심볼 SVG 확인 |
 | 브라우저 검증 | `npm run test:e2e` | 5개 미션, 접근성, 반응형, 안전 테스트 전체 PASS |
-| 전체 로컬 게이트 | `npm run check && npm run test:e2e` | 릴리스 전 로컬 게이트 전부 성공 |
+| 전체 로컬 게이트 | `npm run check && npm run test:e2e` | 릴리스 전 로컬 게이트와 Pages 자산 smoke 전부 성공 |
 | 파일 크기 | `find src e2e -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.css' \) -print0 \| xargs -0 wc -l` | 모든 파일 500줄 미만 |
 | 커밋 상태 | `git status --short` | 의도하지 않은 변경 없음 |
 | CI 확인 | `gh run list --workflow deploy-pages.yml --limit 1` | 최신 run이 대상 commit을 가리킴 |

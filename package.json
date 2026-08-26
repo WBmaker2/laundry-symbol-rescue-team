@@ -8,9 +8,10 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
+    "test:pages-assets": "node scripts/pages-assets-smoke.mjs",
     "test:watch": "vitest",
     "build": "tsc -b && vite build",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:pages-assets"
   },
   "keywords": [],
   "author": "",
