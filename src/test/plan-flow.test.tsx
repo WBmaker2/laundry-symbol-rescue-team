@@ -47,12 +47,41 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
     expect(screen.getByRole('heading', { name: '세 벌을 함께 또는 따로 관리하기' })).toBeInTheDocument();
   });
 
+  it('E2E data hooks identify one symbol card, its option button, and reason checkbox', async () => {
+    const user = userEvent.setup();
+    const magnifier = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
+    const symbolCard = document.querySelector('[data-symbol-id="care-wash-30-gentle"]');
+    expect(document.querySelectorAll('[data-symbol-id="care-wash-30-gentle"]')).toHaveLength(1);
+    expect(symbolCard?.querySelectorAll('input')).not.toHaveLength(0);
+    magnifier.unmount();
+
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
+    const optionButton = document.querySelector('[data-care-option-id="plan-wash-gentle-30"]');
+    expect(optionButton?.tagName).toBe('BUTTON');
+    await user.click(optionButton as HTMLElement);
+    expect(optionButton).toHaveAttribute('aria-pressed', 'true');
+
+    cleanup();
+    renderAppAtStep({ missionId: 'mixed-load', step: 'plan' });
+    const reasonCheckbox = document.querySelector('input[data-grouping-reason-symbol-id="care-professional"]');
+    expect(reasonCheckbox?.tagName).toBe('INPUT');
+    await user.click(reasonCheckbox as HTMLElement);
+    expect(reasonCheckbox).toBeChecked();
+  });
+
+  it('혼합 의류별 분리 관리 버튼은 의류 이름을 accessible name에 포함한다', () => {
+    renderAppAtStep({ missionId: 'mixed-load', step: 'plan' });
+    const separationButtons = screen.getAllByRole('button', { name: /분리 관리 —/ });
+    expect(separationButtons).toHaveLength(3);
+    expect(new Set(separationButtons.map((button) => button.getAttribute('aria-label'))).size).toBe(3);
+  });
+
   it('혼합 계획 제출은 canonical groupingEvaluation을 포함해 다음 단계로 이동한다', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'mixed-load', step: 'plan' });
-    await user.click(screen.getAllByRole('button', { name: '함께 관리에 넣기' })[0]!);
-    await user.click(screen.getAllByRole('button', { name: '함께 관리에 넣기' })[1]!);
-    await user.click(screen.getAllByRole('button', { name: '따로 관리에 넣기' })[2]!);
+    await user.click(screen.getAllByRole('button', { name: /함께 관리 —/ })[0]!);
+    await user.click(screen.getAllByRole('button', { name: /함께 관리 —/ })[1]!);
+    await user.click(screen.getAllByRole('button', { name: /분리 관리 —/ })[2]!);
     await user.click(screen.getByRole('checkbox', { name: /전문 섬유 관리 확인 표시를 분리 근거로 선택/ }));
     for (const [cardName, stageName] of [
       ['잠깐 멈추고 도움 요청하기 카드 선택', '세탁 단계에 놓기'],

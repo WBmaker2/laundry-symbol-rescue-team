@@ -214,18 +214,20 @@ export function ManagementBoardScreen({ mission, onSubmit }: ManagementBoardScre
                   <ActionButton
                     type="button"
                     className="grouping-choice"
+                    aria-label={`함께 관리 — ${garment.name}`}
                     aria-pressed={grouping.togetherGarmentIds.includes(garment.id)}
                     onClick={() => assignGarment(garment.id, 'together')}
                   >
-                    함께 관리에 넣기
+                    함께 관리
                   </ActionButton>
                   <ActionButton
                     type="button"
                     className="grouping-choice"
+                    aria-label={`분리 관리 — ${garment.name}`}
                     aria-pressed={grouping.separateGarmentIds.includes(garment.id)}
                     onClick={() => assignGarment(garment.id, 'separate')}
                   >
-                    따로 관리에 넣기
+                    분리 관리
                   </ActionButton>
                 </div>
               </article>
@@ -237,9 +239,10 @@ export function ManagementBoardScreen({ mission, onSubmit }: ManagementBoardScre
               const symbol = careSymbolById.get(symbolId);
               if (!symbol) return null;
               return (
-                <label key={symbolId} className="restriction-item" data-grouping-reason-symbol-id={symbolId}>
+                <label key={symbolId} className="restriction-item">
                   <input
                     type="checkbox"
+                    data-grouping-reason-symbol-id={symbolId}
                     checked={grouping.reasonSymbolIds.includes(symbolId)}
                     onChange={() => toggleReason(symbolId)}
                   />

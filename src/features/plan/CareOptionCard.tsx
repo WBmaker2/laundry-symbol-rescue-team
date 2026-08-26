@@ -12,7 +12,7 @@ export interface CareOptionCardProps {
 export function CareOptionCard({ option, selected, onSelect }: CareOptionCardProps) {
   const title = careOptionTitle(option);
   return (
-    <article className={`care-option-card${selected ? ' is-selected' : ''}`} data-care-option-id={option.id}>
+    <article className={`care-option-card${selected ? ' is-selected' : ''}`}>
       <div>
         <h3>{title}</h3>
         <p>{option.learningDescription}</p>
@@ -21,6 +21,7 @@ export function CareOptionCard({ option, selected, onSelect }: CareOptionCardPro
       <ActionButton
         type="button"
         className="care-option-select"
+        data-care-option-id={option.id}
         aria-pressed={selected}
         aria-label={`${title} 카드 선택`}
         onClick={() => onSelect(option.id)}
