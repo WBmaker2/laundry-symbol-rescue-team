@@ -34,4 +34,20 @@ describe('evaluateInterpretation', () => {
     expect(result.returnPrompt).toContain('표시');
     expect(result.returnPrompt).not.toMatch(/반드시|확실히/);
   });
+
+  it.each([
+    { selectedMeaningOptionId: 'missing-meaning', correctMeaningOptionId: 'meaning-no-iron' },
+    { selectedMeaningOptionId: 'meaning-no-iron', correctMeaningOptionId: 'missing-meaning' },
+  ])('is false when a selected or correct meaning is not visible', ({ selectedMeaningOptionId, correctMeaningOptionId }) => {
+    const symbol = careSymbolById.get('care-no-iron');
+    if (symbol === undefined) throw new Error('fixture symbol is missing');
+
+    const malformedSymbol = { ...symbol, correctMeaningOptionId };
+    const result = evaluateInterpretation({
+      symbol: malformedSymbol,
+      selectedMeaningOptionId,
+    });
+
+    expect(result.isCorrect).toBe(false);
+  });
 });

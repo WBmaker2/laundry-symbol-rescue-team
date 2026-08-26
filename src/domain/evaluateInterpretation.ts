@@ -8,7 +8,13 @@ export function evaluateInterpretation({
   symbol: CareSymbol;
   selectedMeaningOptionId: string;
 }): InterpretationFeedback {
-  const isCorrect = selectedMeaningOptionId === symbol.correctMeaningOptionId;
+  const visibleMeaningIds = new Set(
+    Array.isArray(symbol.meaningOptions) ? symbol.meaningOptions.map(({ id }) => id) : [],
+  );
+  const isCorrect =
+    visibleMeaningIds.has(selectedMeaningOptionId) &&
+    visibleMeaningIds.has(symbol.correctMeaningOptionId) &&
+    selectedMeaningOptionId === symbol.correctMeaningOptionId;
 
   return {
     symbolId: symbol.id,

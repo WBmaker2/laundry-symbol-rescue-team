@@ -4,6 +4,7 @@ import { careSymbolById } from '../content/symbols';
 import { missionById } from '../content/missions';
 import { makeEmptyPlan, makePlanFixture } from '../test/factories';
 import { evaluatePlan, resolveGarmentAllowedOptions } from './evaluatePlan';
+import type { CareOptionId, CareSymbol, CareSymbolId } from './careTypes';
 
 const inputFor = (missionId: Parameters<typeof makeEmptyPlan>[0], plan = makeEmptyPlan(missionId)) => ({
   mission: missionById.get(missionId)!,
@@ -99,5 +100,143 @@ describe('evaluatePlan', () => {
       '실제 옷에서는 제품 라벨과 제조사 안내, 보호자·교사의 안내를 먼저 확인하세요.',
       '실제 다리미, 뜨거운 물, 표백제, 세탁기는 학생 혼자 조작하지 않아요.',
     ]));
+  });
+
+  it('rejects a mission with a missing referenced symbol', () => {
+    const mission = missionById.get('basic-t-shirt')!;
+    const garment = mission.garments[0]!;
+    const malformedMission = {
+      ...mission,
+      garments: [{ ...garment, symbolIds: ['missing-symbol' as CareSymbolId] }],
+    };
+    const result = evaluatePlan({
+      mission: malformedMission,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status }) => status === 'invalid-input')).toBe(true);
+  });
+
+  it('rejects a plan whose mission ID does not match the evaluated mission', () => {
+    const plan = makePlanFixture('basic-t-shirt', 'within-limits');
+    const result = evaluatePlan(inputFor('basic-t-shirt', { ...plan, missionId: 'soft-scarf' }));
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
+
+  it.each([
+    ['duplicate', ['basic-t-shirt', 'basic-t-shirt']],
+    ['unknown', ['missing-garment']],
+    ['partial', []],
+  ] as const)('rejects %s garment IDs', (_label, garmentIds) => {
+    const plan = makePlanFixture('basic-t-shirt', 'within-limits');
+    const result = evaluatePlan(inputFor('basic-t-shirt', { ...plan, garmentIds }));
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status }) => status === 'invalid-input')).toBe(true);
+  });
+
+  it('rejects a selected option missing from the catalog', () => {
+    const options = new Map([...careOptionById].filter(([id]) => id !== 'plan-wash-gentle-30'));
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols: careSymbolById,
+      options,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status }) => status === 'invalid-input')).toBe(true);
+  });
+
+  it('rejects a selected option whose catalog stage does not match', () => {
+    const plan = makePlanFixture('basic-t-shirt', 'within-limits');
+    const malformedPlan = {
+      ...plan,
+      stageOptions: { ...plan.stageOptions, wash: 'plan-dry-flat' as CareOptionId },
+    };
+    const result = evaluatePlan(inputFor('basic-t-shirt', malformedPlan));
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status }) => status === 'invalid-input')).toBe(true);
+  });
+
+  it.each([
+    ['missing material constraint', 'missing-option'],
+    ['stage-mismatched material constraint', 'plan-dry-flat'],
+  ] as const)('rejects a %s reference', (_label, optionId) => {
+    const mission = missionById.get('basic-t-shirt')!;
+    const garment = mission.garments[0]!;
+    const malformedMission = {
+      ...mission,
+      garments: [{
+        ...garment,
+        materialAllowedOptionIdsByStage: {
+          ...garment.materialAllowedOptionIdsByStage,
+          wash: [optionId as CareOptionId],
+        },
+      }],
+    };
+    const result = evaluatePlan({
+      mission: malformedMission,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status }) => status === 'invalid-input')).toBe(true);
+  });
+
+  it('rejects a missing symbol constraint-catalog option', () => {
+    const symbol = careSymbolById.get('care-wash-30-gentle')!;
+    const malformedSymbol = { ...symbol, allowedOptionIds: ['missing-option' as CareOptionId] };
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(symbol.id, malformedSymbol as CareSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status }) => status === 'invalid-input')).toBe(true);
+  });
+
+  it('returns null resource levels until all three stage options are known and stage-correct', () => {
+    const result = evaluatePlan(inputFor('basic-t-shirt'));
+
+    expect(result.waterUse).toBeNull();
+    expect(result.energyUse).toBeNull();
+  });
+
+  it('uses Korean planning-stage labels in every stage finding', () => {
+    const result = evaluatePlan(inputFor('decorated-top', makePlanFixture('decorated-top', 'outside-limits')));
+    const stageFindings = result.findings.filter(({ stage }) => stage !== 'restriction');
+
+    expect(stageFindings.every(({ feedback }) => /세탁|건조|다림질/.test(feedback))).toBe(true);
+    expect(stageFindings.every(({ feedback }) => !/wash 단계|dry 단계|iron 단계/.test(feedback))).toBe(true);
+  });
+
+  it('lets forbidden options win over an overlapping allowed option', () => {
+    const symbol = careSymbolById.get('care-wash-30-gentle')!;
+    const malformedSymbol = {
+      ...symbol,
+      forbiddenOptionIds: [...symbol.forbiddenOptionIds, 'plan-wash-gentle-30' as CareOptionId],
+    };
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById).set(symbol.id, malformedSymbol as CareSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ status, stage }) => status === 'outside-limit' && stage === 'wash')).toBe(true);
   });
 });

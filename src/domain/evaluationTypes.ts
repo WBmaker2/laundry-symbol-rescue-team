@@ -18,7 +18,8 @@ export type PlanFindingStatus =
   | 'allowed'
   | 'outside-limit'
   | 'missing-step'
-  | 'unread-restriction';
+  | 'unread-restriction'
+  | 'invalid-input';
 
 export interface PlanFinding {
   status: PlanFindingStatus;
@@ -34,7 +35,7 @@ export interface PlanEvaluation {
   status: 'ready' | 'revise';
   findings: readonly PlanFinding[];
   combinedAllowedOptions: Readonly<Record<PlanningStage, readonly CareOptionId[]>>;
-  waterUse: RelativeLevel;
-  energyUse: RelativeLevel;
+  waterUse: RelativeLevel | null;
+  energyUse: RelativeLevel | null;
   safetyNotices: readonly string[];
 }
