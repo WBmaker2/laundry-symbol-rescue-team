@@ -13,23 +13,18 @@ import { missionById } from '../content/missions';
 import type { CareOption } from '../domain/missionTypes';
 import type { GarmentMission, VirtualGarment } from '../domain/missionTypes';
 import { SymbolFigure } from '../components/ui/SymbolFigure';
-
 describe('Task 7 앱 시작 흐름', () => {
   afterEach(() => cleanup());
   it('다섯 미션을 제목과 학습 초점이 함께 읽히는 버튼으로 보여 준다', () => {
     render(<App />);
-
     expect(screen.getAllByRole('button', { name: /미션 선택/ })).toHaveLength(5);
     expect(screen.getByRole('button', { name: /기본 티셔츠.*세탁 표시와 건조 표시/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /섞|서로 다른 세 벌/ })).toBeInTheDocument();
   });
-
   it('미션 선택은 구조 요청 화면을 보여 주고 요청에서 바로 건너뛰지 않는다', async () => {
     const user = userEvent.setup();
     render(<App />);
-
     await user.click(screen.getByRole('button', { name: /기본 티셔츠.*미션 선택/ }));
-
     expect(screen.getByRole('heading', { name: /기본 티셔츠 구조 요청/ })).toBeInTheDocument();
     expect(screen.getByText(/면 중심 재료 모형/)).toBeInTheDocument();
     expect(screen.getByText(/학습용 재료 모형/)).toBeInTheDocument();
@@ -38,27 +33,22 @@ describe('Task 7 앱 시작 흐름', () => {
     expect(screen.getByRole('button', { name: '표시 확대' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /표시 확대경/ })).not.toBeInTheDocument();
   });
-
   it('표시 확대는 요청 화면을 건너뛰지 않고 magnifier 단계로 이동시킨다', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: /기본 티셔츠.*미션 선택/ }));
     await user.click(screen.getByRole('button', { name: '표시 확대' }));
-
     expect(screen.getByRole('heading', { name: '표시 확대경' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /표시 확대/ })).not.toBeInTheDocument();
   });
-
   it('진행 표시는 7단계 순서와 현재 단계만 의미론적으로 알린다', () => {
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'request' });
-
     const list = screen.getByRole('navigation', { name: '학습 진행 7단계' }).querySelector('ol');
     if (!list) throw new Error('진행 목록이 없습니다.');
     expect(list.querySelectorAll('li')).toHaveLength(7);
     expect(screen.getByText('구조 요청')).toHaveAttribute('aria-current', 'step');
     expect(screen.queryAllByRole('link')).toHaveLength(0);
   });
-
   it('고대비는 wrapper의 앱 메모리 상태만 바꾸고 aria-pressed를 갱신한다', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -66,14 +56,12 @@ describe('Task 7 앱 시작 흐름', () => {
     const shell = screen.getByTestId('app-shell');
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
     expect(shell).toHaveAttribute('data-contrast', 'normal');
-
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-pressed', 'true');
     expect(shell).toHaveAttribute('data-contrast', 'high');
     expect(window.localStorage.length).toBe(0);
     expect(document.documentElement).not.toHaveAttribute('data-contrast');
   });
-
   it('대표 미래 단계의 렌더 헬퍼는 canonical 선행 상태를 만든다', () => {
     for (const step of ['magnifier', 'plan', 'forecast', 'simulation', 'revision'] as const) {
       const result = renderAppAtStep({ missionId: 'decorated-top', step, scenario: 'outside-limits' });
@@ -81,18 +69,15 @@ describe('Task 7 앱 시작 흐름', () => {
       result.unmount();
     }
   });
-
   it('completed-revision은 두 계획과 평가를 가진 report만 허용한다', () => {
     const result = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'report', scenario: 'completed-revision' });
     expect(result.container.querySelector('[data-app-step]')).toHaveAttribute('data-app-step', 'report');
     expect(screen.getByText(/최초 계획/)).toBeInTheDocument();
     expect(screen.getByText(/수정 계획/)).toBeInTheDocument();
     result.unmount();
-
     expect(() => renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan', scenario: 'completed-revision' }))
       .toThrow(/report 단계/);
   });
-
   it.each(missions)('completed-revision evidence is canonical for %s', (mission) => {
     const state = buildLearnerSessionAtStep({
       missionId: mission.id,
@@ -104,11 +89,9 @@ describe('Task 7 앱 시작 흐름', () => {
     expect(state.initialEvaluation).not.toBeNull();
     expect(state.revisedEvaluation).not.toBeNull();
     expect(state.revisionEvidence).not.toBeNull();
-
     const changedStages = planningStages.filter((stage) =>
       state.initialPlan!.stageOptions[stage] !== state.revisedPlan!.stageOptions[stage]);
     expect(state.revisionEvidence!.changedStages).toEqual(changedStages);
-
     const planEvidence = state.initialEvaluation!.findings
       .filter(({ status }) => status !== 'allowed')
       .flatMap(({ relatedSymbolIds }) => relatedSymbolIds);
@@ -118,7 +101,6 @@ describe('Task 7 앱 시작 흐름', () => {
     const canonicalReasons = new Set([...planEvidence, ...groupingEvidence]);
     expect(state.revisionEvidence!.relatedSymbolIds.length).toBeGreaterThan(0);
     expect(state.revisionEvidence!.relatedSymbolIds.every((id) => canonicalReasons.has(id))).toBe(true);
-
     if (mission.id === 'mixed-load') {
       expect(state.revisionEvidence!.reasonId).toBe('separate-incompatible-garment');
       expect(state.revisionEvidence!.relatedSymbolIds).toContain('care-professional');
@@ -126,7 +108,6 @@ describe('Task 7 앱 시작 흐름', () => {
       expect(state.revisionEvidence!.reasonId).toBe('follow-label-limit');
     }
   });
-
   it.each(missions)('default report builds a ready confirmation state for %s', (mission) => {
     const state = buildLearnerSessionAtStep({ missionId: mission.id, step: 'report' });
     expect(state.step).toBe('report');
@@ -145,37 +126,30 @@ describe('Task 7 앱 시작 흐름', () => {
     expect(state.revisionEvidence?.relatedSymbolIds.length).toBeGreaterThan(0);
     expect(state.revisionEvidence?.relatedSymbolIds.every((id) =>
       mission.garments.some(({ symbolIds }) => symbolIds.includes(id)))).toBe(true);
-
     const result = renderAppAtStep({ missionId: mission.id, step: 'report' });
     expect(result.container.querySelector('[data-app-step="report"]')).toBeInTheDocument();
     result.unmount();
   });
-
   it('shows the opening prompt exactly once', () => {
     const mission = missions.find(({ id }) => id === 'basic-t-shirt')!;
     renderAppAtStep({ missionId: mission.id, step: 'request' });
     expect(screen.getAllByText(mission.openingPrompt, { exact: true })).toHaveLength(1);
   });
-
   it('uses distinct non-answer silhouettes for scarf and sportswear', () => {
     const scarf = renderAppAtStep({ missionId: 'soft-scarf', step: 'request' });
     expect(scarf.container.querySelector('[data-illustration-kind="scarf"]')).toBeInTheDocument();
     expect(scarf.container.querySelector('[data-illustration-kind="shirt"]')).toBeNull();
     scarf.unmount();
-
     const sportswear = renderAppAtStep({ missionId: 'sportswear', step: 'request' });
     expect(sportswear.container.querySelector('[data-illustration-kind="sportswear"]')).toBeInTheDocument();
     expect(sportswear.container.querySelector('[data-illustration-kind="decorated-top"]')).toBeNull();
     sportswear.unmount();
   });
 });
-
 describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
   afterEach(() => cleanup());
-
   it('활성 표시 하나에 문자 설명과 표시 구분을 항상 함께 보여 준다', () => {
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
-
     expect(screen.getAllByRole('button', { name: '뜻 확인' })).toHaveLength(1);
     expect(screen.getByRole('img', { name: /세탁통 안에 30/ })).toBeInTheDocument();
     expect(screen.getAllByText('30°C 약한 세탁')).not.toHaveLength(0);
@@ -183,17 +157,14 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     expect(screen.getByText('학습용 아이콘')).toBeInTheDocument();
     expect(screen.getAllByText(/30°C와 한 줄은 약한 세탁/)).not.toHaveLength(0);
   });
-
   it('확대 버튼은 native 상태를 알리고 용어 도움은 정확한 용어를 제공한다', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
-
     const expand = screen.getByRole('button', { name: '표시 크게 보기' });
     expect(expand).toHaveAttribute('aria-expanded', 'false');
     await user.click(expand);
     expect(expand).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('img', { name: /세탁통 안에 30/ })).toHaveClass('symbol-image-expanded');
-
     expect(screen.getByRole('group', { name: /뜻 후보/ })).toBeInTheDocument();
     const glossary = screen.getByText('용어 도움');
     expect(glossary.tagName).toBe('SUMMARY');
@@ -201,11 +172,9 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       expect(screen.getByText(new RegExp(term))).toBeInTheDocument();
     }
   });
-
   it('native radio는 키보드로 고르고 오답 뒤 같은 카드 설명으로 돌아가 재시도할 수 있다', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
-
     const radios = screen.getAllByRole('radio');
     expect(radios).toHaveLength(3);
     expect(new Set(radios.map((radio) => radio.getAttribute('name'))).size).toBe(1);
@@ -214,20 +183,17 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     await user.click(wrongRadio);
     expect(wrongRadio).toBeChecked();
     await user.click(screen.getByRole('button', { name: '뜻 확인' }));
-
     expect(screen.getByRole('status')).toHaveTextContent(/문자 설명과 허용 조건을 다시 확인/);
     const description = screen.getByTestId('symbol-description');
     expect(description).toHaveAttribute('tabindex', '-1');
     expect(document.activeElement).toBe(description);
     expect(screen.getAllByRole('button', { name: '뜻 확인' })).toHaveLength(1);
   });
-
   it('모든 고유 표시를 맞히기 전에는 계획으로 넘어가지 않고, 맞히면 계획으로 넘어간다', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
     const mission = missions.find(({ id }) => id === 'basic-t-shirt')!;
     const expectedIds = [...new Set(mission.garments.flatMap(({ symbolIds }) => symbolIds))];
-
     expect(screen.getByText(`표시 진행: 0/${expectedIds.length}`)).toBeInTheDocument();
     for (const [index, symbolId] of expectedIds.entries()) {
       const symbol = careSymbolById.get(symbolId)!;
@@ -241,13 +207,11 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     }
     expect(screen.getByRole('heading', { name: /관리 순서판/ })).toBeInTheDocument();
   });
-
   it('정답이 화면에 data-correct나 정답 ID로 새어 나오지 않는다', () => {
     const result = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
     expect(result.container.querySelector('[data-correct]')).toBeNull();
     expect(result.container.textContent).not.toContain('meaning-wash-30-gentle');
   });
-
   it('중복 표시가 있는 미션도 고유 표시를 한 번씩만 묻는다', () => {
     const mission = missions.find(({ id }) => id === 'mixed-load')!;
     const totalOccurrences = mission.garments.flatMap(({ symbolIds }) => symbolIds).length;
@@ -257,7 +221,6 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     expect(screen.getByText(`표시 진행: 0/${uniqueCount}`)).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: '뜻 확인' })).toHaveLength(1);
   });
-
   it('표시 catalog가 빠지면 한국어 오류로 멈추고 조용히 건너뛰지 않는다', () => {
     const original = careSymbolById.get('care-wash-30-gentle');
     careSymbolById.delete('care-wash-30-gentle');
@@ -269,7 +232,6 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       if (original) careSymbolById.set('care-wash-30-gentle', original);
     }
   });
-
   it.each([
     ['빈 accessibleDescription', (symbol: CareSymbol) => ({ ...symbol, accessibleDescription: ' ' })],
     ['중복 meaning options', (symbol: CareSymbol) => ({
@@ -296,12 +258,10 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       symbolCatalog.set(symbolId, original);
     }
   });
-
   it('catalog 검증을 통과한 정상 Map은 기존 표시 경로로 렌더링된다', () => {
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
     expect(screen.getByRole('img', { name: /세탁통 안에 30/ })).toBeInTheDocument();
   });
-
   it.each([
     ['mission id', (mission: GarmentMission) => ({ ...mission, id: 'soft-scarf' as GarmentMission['id'] })],
     ['mission order', (mission: GarmentMission) => ({ ...mission, order: 99 as GarmentMission['order'] })],
@@ -362,7 +322,6 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       missionCatalog.set(missionId, original);
     }
   });
-
   it('mission Map key와 mission.id가 다르면 표시 활동을 시작하지 않는다', () => {
     const missionId = 'basic-t-shirt';
     const missionCatalog = missionById as unknown as Map<string, unknown>;
@@ -375,7 +334,6 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       missionCatalog.set(missionId, original);
     }
   });
-
   it.each([
     ['빈 label', (option: CareOption) => ({ ...option, label: ' ' })],
     ['잘못된 requiresAdult', (option: CareOption) => ({ ...option, requiresAdult: 'yes' as unknown as boolean })],
@@ -396,7 +354,6 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       optionCatalog.set(optionId, original);
     }
   });
-
   it('SymbolFigure는 per-symbol review·provenance가 잘못되면 img를 렌더하지 않는다', () => {
     const valid = careSymbols[0]!;
     const { rerender } = render(<SymbolFigure symbol={{ ...valid, accessibleDescription: ' ' }} expanded={false} />);
@@ -433,10 +390,8 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     expect(screen.getByRole('img', { name: valid.accessibleDescription })).toBeInTheDocument();
   });
 });
-
 describe('Task 10 근거 기반 손상 예보', () => {
   afterEach(() => cleanup());
-
   it('asks for a possible outcome and a related label before showing feedback', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'decorated-top', step: 'forecast', scenario: 'outside-limits' });
@@ -445,5 +400,31 @@ describe('Task 10 근거 기반 손상 예보', () => {
     await user.click(screen.getByRole('button', { name: '손상 예보 확인' }));
     expect(screen.getByRole('status')).toHaveTextContent(/가능성/);
     expect(screen.getByRole('status')).toHaveTextContent(/표시/);
+  });
+});
+describe('Task 11 가상 결과와 계획 수정', () => {
+  afterEach(() => cleanup());
+  it('shows non-certain virtual results and requires a revised plan', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({
+      missionId: 'decorated-top',
+      step: 'simulation',
+      scenario: 'outside-limits',
+    });
+    expect(screen.getByText(/가상 결과/)).toBeInTheDocument();
+    expect(screen.getByText(/손상 가능성이 커질 수 있어요/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '계획 수정하기' }));
+    expect(screen.getByRole('heading', { name: '관리 계획 수정' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '최초 계획과 비교' })).toBeInTheDocument();
+  });
+  it('requires an actual change and label evidence after an outside-limit plan', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({
+      missionId: 'decorated-top',
+      step: 'revision',
+      scenario: 'outside-limits',
+    });
+    await user.click(screen.getByRole('button', { name: '수정 계획 확인' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/바꾼 단계와 근거 표시/);
   });
 });

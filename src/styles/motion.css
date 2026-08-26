@@ -8,6 +8,17 @@
   animation: gi-pulse 1.8s ease-in-out infinite;
 }
 
+@keyframes comparison-drift {
+  0%,
+  100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.comparison-illustration-animated .comparison-garment-after {
+  animation: comparison-drift 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .gi-pulse { animation: none; }
+  .gi-pulse,
+  .comparison-illustration-animated .comparison-garment-after { animation: none; }
 }

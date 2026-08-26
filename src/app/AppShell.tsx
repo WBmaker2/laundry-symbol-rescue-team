@@ -9,6 +9,8 @@ import type { SessionStep } from '../domain/sessionReducer';
 import { SymbolMagnifierScreen } from '../features/magnifier/SymbolMagnifierScreen';
 import { ManagementBoardScreen } from '../features/plan/ManagementBoardScreen';
 import { DamageForecastScreen } from '../features/forecast/DamageForecastScreen';
+import { VirtualCareScreen } from '../features/simulation/VirtualCareScreen';
+import { RevisionScreen } from '../features/revision/RevisionScreen';
 import './app-shell.css';
 import '../styles/motion.css';
 
@@ -82,8 +84,41 @@ function StepContent({ step }: { step: SessionStep }) {
         />
       );
     }
-    case 'simulation': return <FutureStepPlaceholder step={step} title="가상 관리" />;
-    case 'revision': return <FutureStepPlaceholder step={step} title="계획 수정" />;
+    case 'simulation': {
+      if (state.missionId === null || state.initialPlan === null || state.initialEvaluation === null) {
+        throw new Error('가상 결과에 필요한 처음 계획 자료가 없습니다.');
+      }
+      const mission = missionById.get(state.missionId);
+      if (!mission) throw new Error('가상 결과의 미션을 찾을 수 없습니다.');
+      return (
+        <VirtualCareScreen
+          mission={mission}
+          plan={state.initialPlan}
+          evaluation={state.initialEvaluation}
+          predictionFeedback={state.predictionFeedback}
+          onStartRevision={() => dispatch({ type: 'START_REVISION' })}
+        />
+      );
+    }
+    case 'revision': {
+      if (state.missionId === null || state.initialPlan === null || state.initialEvaluation === null) {
+        throw new Error('수정 계획에 필요한 처음 계획 자료가 없습니다.');
+      }
+      const mission = missionById.get(state.missionId);
+      if (!mission) throw new Error('수정 계획의 미션을 찾을 수 없습니다.');
+      return (
+        <RevisionScreen
+          mission={mission}
+          initialPlan={state.initialPlan}
+          initialEvaluation={state.initialEvaluation}
+          initialGroupingEvaluation={state.initialGroupingEvaluation}
+          predictionFeedback={state.predictionFeedback}
+          onSubmit={(plan, evaluation, groupingEvaluation, evidence) => dispatch({
+            type: 'SUBMIT_REVISION', plan, evaluation, groupingEvaluation, evidence,
+          })}
+        />
+      );
+    }
     case 'report': return <FutureStepPlaceholder step={step} title="구조 보고서" reportReady={state.revisedPlan !== null} />;
     default: {
       const unknownStep: never = step;

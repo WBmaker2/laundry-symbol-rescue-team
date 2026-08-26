@@ -36,14 +36,16 @@ function restrictionIds(mission: GarmentMission): readonly CareSymbolId[] {
 
 export interface ManagementBoardScreenProps {
   mission: GarmentMission;
+  mode?: 'initial' | 'revision';
+  initialPlan?: StudentPlan | null;
   onSubmit: (plan: StudentPlan, evaluation: PlanEvaluation, groupingEvaluation: GroupingEvaluation | null) => void;
 }
 
-export function ManagementBoardScreen({ mission, onSubmit }: ManagementBoardScreenProps) {
-  const [stageOptions, setStageOptions] = useState(emptyStageOptions);
+export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan = null, onSubmit }: ManagementBoardScreenProps) {
+  const [stageOptions, setStageOptions] = useState(() => initialPlan?.stageOptions ?? emptyStageOptions());
   const [selectedOptionId, setSelectedOptionId] = useState<CareOptionId | null>(null);
-  const [acknowledgedRestrictionIds, setAcknowledgedRestrictionIds] = useState<CareSymbolId[]>([]);
-  const [grouping, setGrouping] = useState<GroupingChoice | null>(() => initialGrouping(mission));
+  const [acknowledgedRestrictionIds, setAcknowledgedRestrictionIds] = useState<CareSymbolId[]>(() => [...(initialPlan?.acknowledgedRestrictionIds ?? [])]);
+  const [grouping, setGrouping] = useState<GroupingChoice | null>(() => initialPlan?.grouping ?? initialGrouping(mission));
   const [message, setMessage] = useState<string | null>(null);
   const headingRefs = useRef<Partial<Record<PlanningStage, HTMLHeadingElement | null>>>({});
   const restrictions = restrictionIds(mission);
@@ -131,9 +133,9 @@ export function ManagementBoardScreen({ mission, onSubmit }: ManagementBoardScre
 
   return (
     <section className="management-board" data-mission-id={mission.id} aria-labelledby="management-board-title">
-      <p className="eyebrow">세 번째 단계</p>
-      <h2 id="management-board-title">관리 순서판</h2>
-      <p>관리 방법 카드를 먼저 고르고, 카드를 놓을 단계를 버튼으로 선택해요.</p>
+      <p className="eyebrow">{mode === 'revision' ? '여섯 번째 단계' : '세 번째 단계'}</p>
+      <h2 id="management-board-title">{mode === 'revision' ? '새 수정 계획 만들기' : '관리 순서판'}</h2>
+      <p>{mode === 'revision' ? '최초 계획을 살펴본 뒤, 바꿀 카드만 다시 골라 단계에 놓아요.' : '관리 방법 카드를 먼저 고르고, 카드를 놓을 단계를 버튼으로 선택해요.'}</p>
       <p className="learning-boundary">카드의 조건은 가상 재료 모형을 비교하는 학습 자료예요. 실제 옷은 제품 라벨과 보호자·교사 안내를 먼저 확인해요.</p>
 
       <CurrentPlanSummary
@@ -256,8 +258,8 @@ export function ManagementBoardScreen({ mission, onSubmit }: ManagementBoardScre
 
       {message && <p className="plan-message" role="status" aria-live="polite">{message}</p>}
       <SafetyNotice />
-      <ActionButton type="button" className="primary-action" emphasis="required" onClick={submit}>
-        관리 계획 확인
+      <ActionButton type="button" className="primary-action" emphasis={mode === 'initial' ? 'required' : 'normal'} onClick={submit}>
+        {mode === 'revision' ? '수정 계획 확인' : '관리 계획 확인'}
       </ActionButton>
     </section>
   );
