@@ -35,6 +35,9 @@ const damageRiskIds: readonly DamageRiskId[] = [
   'decoration-damage',
   'heat-damage',
 ];
+const displayKinds = ['official-standard-symbol', 'learning-icon'] as const;
+const missionIds = ['basic-t-shirt', 'soft-scarf', 'sportswear', 'decorated-top', 'mixed-load'] as const;
+const missionOrders = [1, 2, 3, 4, 5] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -59,6 +62,17 @@ function isRelativeLevel(value: unknown): value is RelativeLevel {
 function riskListIssue(value: unknown, source: string): string | null {
   if (!Array.isArray(value) || value.some((riskId) => !damageRiskIds.includes(riskId as DamageRiskId))) {
     return `${source}의 가능성 근거 목록이 올바르지 않아요.`;
+  }
+  return null;
+}
+
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function stringListIssue(value: unknown, source: string): string | null {
+  if (!Array.isArray(value) || value.length === 0 || value.some((item) => !nonEmptyString(item))) {
+    return `${source}의 문자 목록이 올바르지 않아요.`;
   }
   return null;
 }
@@ -91,6 +105,28 @@ function symbolShapeIssue(key: unknown, value: unknown): string | null {
   if (symbol.id !== key || typeof symbol.id !== 'string') return `'${key}' 표시의 ID가 목록과 달라요.`;
   if (!isCareStage(symbol.category)) return `'${key}' 표시의 범주가 올바르지 않아요.`;
   if (typeof symbol.name !== 'string') return `'${key}' 표시의 이름이 올바르지 않아요.`;
+  if (!displayKinds.includes(symbol.displayKind as typeof displayKinds[number])) {
+    return `'${key}' 표시의 공개 구분이 올바르지 않아요.`;
+  }
+  if (!nonEmptyString(symbol.name) || !nonEmptyString(symbol.categoryHint)
+    || !nonEmptyString(symbol.shortDescription) || !nonEmptyString(symbol.accessibleDescription)) {
+    return `'${key}' 표시의 문자 설명이 올바르지 않아요.`;
+  }
+  if (!nonEmptyString(symbol.assetPath) || !symbol.assetPath.startsWith('/symbols/')
+    || !symbol.assetPath.endsWith('.svg')) return `'${key}' 표시 그림 경로가 올바르지 않아요.`;
+  const sourceIssue = stringListIssue(symbol.sourceIds, `'${key}' 표시 출처`);
+  if (sourceIssue !== null || !nonEmptyString(symbol.reviewedAt)) {
+    return sourceIssue ?? `'${key}' 표시 검수일이 올바르지 않아요.`;
+  }
+  if (!Array.isArray(symbol.meaningOptions) || symbol.meaningOptions.length === 0
+    || symbol.meaningOptions.some((option) => !isRecord(option)
+      || !nonEmptyString(option.id) || !nonEmptyString(option.label))) {
+    return `'${key}' 표시 뜻 선택지가 올바르지 않아요.`;
+  }
+  if (!nonEmptyString(symbol.correctMeaningOptionId)
+    || !symbol.meaningOptions.some((option) => isRecord(option) && option.id === symbol.correctMeaningOptionId)) {
+    return `'${key}' 표시의 정답 선택지가 보이는 목록에 없어요.`;
+  }
   if (!Array.isArray(symbol.allowedOptionIds) || !Array.isArray(symbol.forbiddenOptionIds)) {
     return `'${key}' 표시의 조건 목록이 올바르지 않아요.`;
   }
@@ -112,7 +148,27 @@ function optionReferenceIssue(
 
 function symbolReferenceIssue(symbolId: unknown, symbols: ReadonlyMap<string, unknown>): string | null {
   if (typeof symbolId !== 'string') return '표시 ID가 올바르지 않아요.';
-  if (symbols.get(symbolId) === undefined) return `'${symbolId}' 표시를 목록에서 찾을 수 없어요.`;
+  if (!isRecord(symbols.get(symbolId))) return `'${symbolId}' 표시를 목록에서 찾을 수 없어요.`;
+  return null;
+}
+
+function missionShapeIssue(mission: unknown): string | null {
+  if (!isRecord(mission) || !missionIds.includes(mission.id as typeof missionIds[number])) {
+    return '미션 ID가 올바르지 않아요.';
+  }
+  if (!missionOrders.includes(mission.order as typeof missionOrders[number])) return '미션 순서가 올바르지 않아요.';
+  if (!nonEmptyString(mission.title) || !nonEmptyString(mission.learningFocus)
+    || !nonEmptyString(mission.openingPrompt)) return '미션 설명이 올바르지 않아요.';
+  if (typeof mission.requiresGrouping !== 'boolean') return '미션의 그룹 단계 표시가 올바르지 않아요.';
+  return null;
+}
+
+function garmentShapeIssue(garment: unknown): string | null {
+  if (!isRecord(garment) || !nonEmptyString(garment.id) || !nonEmptyString(garment.name)
+    || !nonEmptyString(garment.materialModel) || !nonEmptyString(garment.materialBoundary)
+    || !nonEmptyString(garment.contaminationScenario)) {
+    return '미션 의류의 설명·재료 경계가 올바르지 않아요.';
+  }
   return null;
 }
 
@@ -152,8 +208,9 @@ export function validatePlanInput(input: unknown): PlanInputValidationResult {
 
   const mission = candidate.mission;
   const plan = candidate.plan;
-  if (!isRecord(mission) || !Array.isArray(mission.garments) || typeof mission.id !== 'string') {
-    return { valid: false, message: '미션 ID 또는 의류 목록이 올바르지 않아요.' };
+  const missionIssue = missionShapeIssue(mission);
+  if (missionIssue !== null || !isRecord(mission) || !Array.isArray(mission.garments)) {
+    return { valid: false, message: missionIssue ?? '미션 ID 또는 의류 목록이 올바르지 않아요.' };
   }
   if (!isRecord(plan) || !Array.isArray(plan.garmentIds)) {
     return { valid: false, message: '계획의 의류 목록이 올바르지 않아요.' };
@@ -162,10 +219,9 @@ export function validatePlanInput(input: unknown): PlanInputValidationResult {
 
   const missionGarmentIds: string[] = [];
   for (const garment of mission.garments) {
-    if (!isRecord(garment) || typeof garment.id !== 'string' || typeof garment.name !== 'string') {
-      return { valid: false, message: '미션 의류의 ID 또는 이름이 올바르지 않아요.' };
-    }
-    missionGarmentIds.push(garment.id);
+    const garmentIssue = garmentShapeIssue(garment);
+    if (garmentIssue !== null || !isRecord(garment)) return { valid: false, message: garmentIssue ?? '미션 의류가 올바르지 않아요.' };
+    missionGarmentIds.push(garment.id as string);
   }
   if (new Set(missionGarmentIds).size !== missionGarmentIds.length) {
     return { valid: false, message: '미션에 중복된 의류 ID가 있어요.' };

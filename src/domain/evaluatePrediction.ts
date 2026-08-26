@@ -7,6 +7,7 @@ export interface PredictionSelection {
 }
 
 export interface PredictionFeedback {
+  selectionIsValid: boolean;
   supportedRiskIds: readonly DamageRiskId[];
   unsupportedRiskIds: readonly DamageRiskId[];
   missedRiskIds: readonly DamageRiskId[];
@@ -54,6 +55,7 @@ function uniqueTyped<T>(values: readonly T[]): readonly T[] {
 }
 
 interface ParsedSelection {
+  valid: boolean;
   risks: readonly DamageRiskId[];
   invalidRisks: readonly string[];
   reasons: readonly CareSymbolId[];
@@ -62,13 +64,20 @@ interface ParsedSelection {
 
 function parseSelection(selection: unknown): ParsedSelection {
   if (!selection || typeof selection !== 'object') {
-    return { risks: [], invalidRisks: [], reasons: [], invalidReasons: [] };
+    return { valid: false, risks: [], invalidRisks: [], reasons: [], invalidReasons: [] };
   }
   const rawRisks = (selection as { riskIds?: unknown }).riskIds;
   const rawReasons = (selection as { reasonSymbolIds?: unknown }).reasonSymbolIds;
+  if (!Array.isArray(rawRisks) || !Array.isArray(rawReasons)) {
+    return { valid: false, risks: [], invalidRisks: [], reasons: [], invalidReasons: [] };
+  }
   const riskValues = Array.isArray(rawRisks) ? uniqueStrings(rawRisks) : [];
   const reasonValues = Array.isArray(rawReasons) ? uniqueStrings(rawReasons) : [];
   return {
+    valid: rawRisks.every((value) => typeof value === 'string')
+      && rawReasons.every((value) => typeof value === 'string')
+      && riskValues.every(isRiskId)
+      && reasonValues.every(isSymbolId),
     risks: riskValues.filter(isRiskId),
     invalidRisks: riskValues.filter((riskId) => !isRiskId(riskId)),
     reasons: reasonValues.filter(isSymbolId),
@@ -121,22 +130,33 @@ export function evaluatePrediction(input: {
   const evidenceReasons = new Set(evidence.reasons);
   const selectedRisks = new Set(selection.risks);
   const selectedReasons = new Set(selection.reasons);
-  const supportedRiskIds = evidence.valid ? selection.risks.filter((riskId) => evidenceRisks.has(riskId)) : [];
-  const unsupportedRiskIds = selection.risks.filter((riskId) => !evidenceRisks.has(riskId));
-  const missedRiskIds = evidence.valid ? evidence.risks.filter((riskId) => !selectedRisks.has(riskId)) : [];
-  const supportedReasonSymbolIds = evidence.valid
+  const supportedRiskIds = selection.valid && evidence.valid
+    ? selection.risks.filter((riskId) => evidenceRisks.has(riskId))
+    : [];
+  const unsupportedRiskIds = !selection.valid
+    ? selection.risks
+    : selection.risks.filter((riskId) => !evidenceRisks.has(riskId));
+  const missedRiskIds = selection.valid && evidence.valid
+    ? evidence.risks.filter((riskId) => !selectedRisks.has(riskId))
+    : [];
+  const supportedReasonSymbolIds = selection.valid && evidence.valid
     ? selection.reasons.filter((symbolId) => evidenceReasons.has(symbolId))
     : [];
-  const unsupportedReasonSymbolIds = selection.reasons.filter((symbolId) => !evidenceReasons.has(symbolId));
-  const missedReasonSymbolIds = evidence.valid
+  const unsupportedReasonSymbolIds = !selection.valid
+    ? selection.reasons
+    : selection.reasons.filter((symbolId) => !evidenceReasons.has(symbolId));
+  const missedReasonSymbolIds = selection.valid && evidence.valid
     ? evidence.reasons.filter((symbolId) => !selectedReasons.has(symbolId))
     : [];
-  const message = !evidence.valid
+  const message = !selection.valid
+    ? '선택 자료를 확인할 수 없어요. 위험과 근거 표시 선택을 다시 확인해 주세요.'
+    : !evidence.valid
     ? '입력 자료를 확인할 수 없어 손상 가능성을 연결하지 못했어요. 표시와 관리 계획을 다시 살펴보세요.'
     : evidence.risks.length === 0 && evidence.reasons.length === 0
       ? '연결할 손상 가능성 근거가 아직 없어요. 표시와 관리 계획을 다시 살펴보세요.'
       : '선택한 위험과 표시·관리 계획의 근거를 연결해 보았어요. 손상 가능성을 단정하지 말고 표시를 다시 확인해 보세요.';
   return {
+    selectionIsValid: selection.valid,
     supportedRiskIds,
     unsupportedRiskIds,
     missedRiskIds,

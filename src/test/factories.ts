@@ -59,7 +59,7 @@ function groupingForMission(
     return {
       togetherGarmentIds: [first.id, second.id],
       separateGarmentIds: [delicate.id],
-      reasonSymbolIds: ['care-professional', 'care-no-tumble'],
+      reasonSymbolIds: ['care-professional'],
     };
   }
   return {

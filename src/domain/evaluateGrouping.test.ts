@@ -177,4 +177,88 @@ describe('evaluateGrouping', () => {
     expect(result.status).toBe('revise');
     expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(true);
   });
+
+  it('does not treat unrelated acknowledgement-only symbols as separation causes', () => {
+    const mission = missionById.get('mixed-load')!;
+    const [first, second, third] = mission.garments;
+    const compatibleMission = {
+      ...mission,
+      garments: [first, second, {
+        ...third,
+        symbolIds: ['care-no-bleach', 'care-no-iron'],
+      }],
+    } as unknown as typeof mission;
+    const result = evaluateGrouping({
+      mission: compatibleMission,
+      grouping: {
+        togetherGarmentIds: [first!.id, second!.id],
+        separateGarmentIds: [third!.id],
+        reasonSymbolIds: ['care-no-bleach'],
+      },
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(true);
+  });
+
+  it('accepts a stage reason only when the separated garment removes the shared option', () => {
+    const mission = missionById.get('mixed-load')!;
+    const [first, second, third] = mission.garments;
+    const stageLimitedMission = {
+      ...mission,
+      garments: [first, second, {
+        ...third,
+        symbolIds: ['care-flat-dry'],
+        materialAllowedOptionIdsByStage: {
+          ...third!.materialAllowedOptionIdsByStage,
+          dry: ['plan-dry-flat'],
+        },
+      }],
+    } as unknown as typeof mission;
+    const result = evaluateGrouping({
+      mission: stageLimitedMission,
+      grouping: {
+        togetherGarmentIds: [first!.id, second!.id],
+        separateGarmentIds: [third!.id],
+        reasonSymbolIds: ['care-flat-dry'],
+      },
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings.some(({ code }) => code === 'separation-needed')).toBe(true);
+    expect(result.findings.some(({ code }) => code === 'missing-reason')).toBe(false);
+  });
+
+  it('requires the grouping mission and exact mixed-load garment set', () => {
+    const mixed = missionById.get('mixed-load')!;
+    const grouping = makePlanFixture('mixed-load', 'within-limits').grouping!;
+    const notGrouping = evaluateGrouping({
+      mission: { ...mixed, requiresGrouping: false },
+      grouping,
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+    const wrongGarmentMission = {
+      ...mixed,
+      garments: [...mixed.garments.slice(0, 2), {
+        ...mixed.garments[2]!,
+        id: 'not-mixed-garment',
+      }],
+    } as unknown as typeof mixed;
+    const wrongGarments = evaluateGrouping({
+      mission: wrongGarmentMission,
+      grouping,
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(notGrouping.status).toBe('revise');
+    expect(notGrouping.findings[0]?.code).toBe('invalid-membership');
+    expect(wrongGarments.status).toBe('revise');
+    expect(wrongGarments.findings[0]?.code).toBe('invalid-membership');
+  });
 });

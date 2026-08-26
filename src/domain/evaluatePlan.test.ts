@@ -369,4 +369,67 @@ describe('evaluatePlan', () => {
     expect(optionResult.status).toBe('revise');
     expect(optionResult.findings[0]?.status).toBe('invalid-input');
   });
+
+  it.each([
+    ['display kind', { displayKind: null }],
+    ['accessible description', { accessibleDescription: null }],
+    ['source IDs', { sourceIds: [] }],
+    ['review date', { reviewedAt: null }],
+    ['meaning choices', { meaningOptions: [] }],
+    ['visible correct choice', { correctMeaningOptionId: 'missing-choice' }],
+  ] as const)('rejects a malformed published symbol %s field', (_label, change) => {
+    const symbol = careSymbolById.get('care-wash-30-gentle')!;
+    const malformedSymbol = { ...symbol, ...change } as unknown as CareSymbol;
+    const symbols = new Map<CareSymbolId, CareSymbol>(careSymbolById)
+      .set(symbol.id, malformedSymbol);
+    const result = evaluatePlan({
+      mission: missionById.get('basic-t-shirt')!,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
+
+  it.each([
+    ['mission title', { title: '' }],
+    ['mission order', { order: 9 }],
+    ['grouping flag', { requiresGrouping: 'yes' }],
+  ] as const)('rejects a malformed mission identity field: %s', (_label, change) => {
+    const mission = missionById.get('basic-t-shirt')!;
+    const malformedMission = { ...mission, ...change } as unknown as typeof mission;
+    const result = evaluatePlan({
+      mission: malformedMission,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
+
+  it.each([
+    ['material model', { materialModel: '' }],
+    ['material boundary', { materialBoundary: '' }],
+    ['contamination scenario', { contaminationScenario: '' }],
+  ] as const)('rejects a malformed virtual garment field: %s', (_label, change) => {
+    const mission = missionById.get('basic-t-shirt')!;
+    const garment = mission.garments[0]!;
+    const malformedMission = {
+      ...mission,
+      garments: [{ ...garment, ...change }],
+    } as unknown as typeof mission;
+    const result = evaluatePlan({
+      mission: malformedMission,
+      plan: makePlanFixture('basic-t-shirt', 'within-limits'),
+      symbols: careSymbolById,
+      options: careOptionById,
+    });
+
+    expect(result.status).toBe('revise');
+    expect(result.findings[0]?.status).toBe('invalid-input');
+  });
 });

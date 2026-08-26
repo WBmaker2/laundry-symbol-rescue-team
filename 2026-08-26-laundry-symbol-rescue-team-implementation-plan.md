@@ -961,6 +961,8 @@ flowchart LR
 
   교집합 계산은 입력 배열을 변경하지 않고 새 배열을 반환하며, `Date`, 난수, 브라우저 API를 사용하지 않는다.
 
+  `validatePlanInput()`은 표시·선택 Map의 구조와 참조뿐 아니라 공개 표시의 구분·문자 설명·출처·검수일·뜻 선택지, 미션의 식별·설명 필드, 가상 의류의 재료 경계 필드까지 검증하고, 잘못된 입력에서는 `valid: false`로 닫힌다.
+
 - [ ] **Step 5: 해석·계획 판정 테스트를 통과시킨다**
 
   Run: `npm test -- src/domain/evaluateInterpretation.test.ts src/domain/evaluatePlan.test.ts`
@@ -1014,6 +1016,7 @@ flowchart LR
   }
 
   export interface PredictionFeedback {
+    selectionIsValid: boolean;
     supportedRiskIds: readonly DamageRiskId[];
     unsupportedRiskIds: readonly DamageRiskId[];
     missedRiskIds: readonly DamageRiskId[];
@@ -1084,7 +1087,7 @@ flowchart LR
 
 - [ ] **Step 4: 예측 피드백을 최소 구현한다**
 
-  `evaluatePrediction()`은 `outside-limit | missing-step | unread-restriction` 상태 finding의 `riskIds`와 `relatedSymbolIds`만 근거로 사용한다. `allowed`, 알 수 없는 상태, `invalid-input`, 구조가 깨진 finding은 위험·표시 근거에서 제외하거나 전체 평가를 무효화하며, 무효 평가에서는 지원·누락 근거를 만들지 않는다. 학생이 고른 위험을 `supportedRiskIds`, 근거에 없는 선택을 `unsupportedRiskIds`, 근거에는 있으나 고르지 않은 위험을 `missedRiskIds`로 분류한다. 표시 근거도 같은 순서로 `supportedReasonSymbolIds`, `unsupportedReasonSymbolIds`, `missedReasonSymbolIds`로 분류하며, 모르는 위험·표시는 각각 `invalidRiskIds`, `invalidReasonSymbolIds`에 결정적으로 중복 제거해 담는다. 결과 문구는 라벨 재확인을 유도하고 확률·퍼센트·정밀 단위를 만들지 않는다.
+  `evaluatePrediction()`은 선택의 `riskIds`와 `reasonSymbolIds`가 모두 배열이고 모든 원소가 문자열이며 등록된 ID인지 먼저 검사해 `selectionIsValid`를 정한다. 하나라도 빠지거나 잘못되면 지원·누락 근거를 만들지 않고 선택 재확인을 요청하며, 알려진 선택은 필요하면 미지원으로, 모르는 문자열은 `invalidRiskIds`·`invalidReasonSymbolIds`에 담는다. 유효한 중복 ID는 입력 순서를 유지해 한 번만 분류한다. 이후 `outside-limit | missing-step | unread-restriction` 상태 finding의 `riskIds`와 `relatedSymbolIds`만 근거로 사용한다. `allowed`, 알 수 없는 상태, `invalid-input`, 구조가 깨진 finding은 위험·표시 근거에서 제외하거나 전체 평가를 무효화하며, 무효 평가에서는 지원·누락 근거를 만들지 않는다. 학생이 고른 위험을 `supportedRiskIds`, 근거에 없는 선택을 `unsupportedRiskIds`, 근거에는 있으나 고르지 않은 위험을 `missedRiskIds`로 분류한다. 표시 근거도 같은 순서로 `supportedReasonSymbolIds`, `unsupportedReasonSymbolIds`, `missedReasonSymbolIds`로 분류한다. 결과 문구는 라벨 재확인을 유도하고 확률·퍼센트·정밀 단위를 만들지 않는다.
 
 - [ ] **Step 5: 그룹·예측 판정 테스트를 통과시킨다**
 

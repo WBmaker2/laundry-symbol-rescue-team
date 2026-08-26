@@ -88,7 +88,7 @@ describe('virtual garment missions', () => {
     expect(mixedWithin.grouping).toEqual({
       togetherGarmentIds: ['mixed-cotton-shirt', 'mixed-synthetic-sportswear'],
       separateGarmentIds: ['mixed-delicate-scarf'],
-      reasonSymbolIds: ['care-professional', 'care-no-tumble'],
+      reasonSymbolIds: ['care-professional'],
     });
   });
 });

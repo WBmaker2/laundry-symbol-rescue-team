@@ -123,24 +123,23 @@ describe('evaluatePrediction', () => {
     const result = evaluatePrediction({
       evaluation: evidenceEvaluation,
       selection: {
-        riskIds: ['heat-damage', 'unknown-risk', 'heat-damage'] as never,
+        riskIds: ['heat-damage', 'heat-damage'],
         reasonSymbolIds: [
           'care-no-iron',
           'care-professional',
           'care-no-iron',
-          'unknown-symbol',
-        ] as never,
+        ],
       },
     });
 
     expect(result.supportedRiskIds).toEqual(['heat-damage']);
     expect(result.unsupportedRiskIds).toEqual([]);
     expect(result.missedRiskIds).toEqual([]);
-    expect(result.invalidRiskIds).toEqual(['unknown-risk']);
+    expect(result.invalidRiskIds).toEqual([]);
     expect(result.supportedReasonSymbolIds).toEqual(['care-no-iron']);
     expect(result.unsupportedReasonSymbolIds).toEqual(['care-professional']);
     expect(result.missedReasonSymbolIds).toEqual(['care-no-tumble']);
-    expect(result.invalidReasonSymbolIds).toEqual(['unknown-symbol']);
+    expect(result.invalidReasonSymbolIds).toEqual([]);
   });
 
   it.each([
@@ -163,5 +162,44 @@ describe('evaluatePrediction', () => {
     expect(result.missedReasonSymbolIds).toEqual([]);
     expect(result.unsupportedReasonSymbolIds).toEqual(['care-no-iron']);
     expect(result.message).toMatch(/확인|가능성/);
+  });
+
+  it.each([
+    ['missing risk IDs', { reasonSymbolIds: [] }],
+    ['missing reason IDs', { riskIds: [] }],
+    ['non-array risk IDs', { riskIds: 'heat-damage', reasonSymbolIds: [] }],
+    ['non-array reason IDs', { riskIds: [], reasonSymbolIds: 'care-no-iron' }],
+    ['numeric risk ID', { riskIds: [42], reasonSymbolIds: [] }],
+    ['null reason ID', { riskIds: [], reasonSymbolIds: [null] }],
+    ['mixed valid and unknown risk IDs', { riskIds: ['heat-damage', 'unknown-risk'], reasonSymbolIds: [] }],
+    ['mixed valid and unknown reason IDs', { riskIds: [], reasonSymbolIds: ['care-no-iron', 'unknown-symbol'] }],
+  ] as const)('marks %s selection invalid and asks for selection recheck', (_label, selection) => {
+    const result = evaluatePrediction({
+      evaluation: evidenceEvaluation,
+      selection: selection as never,
+    });
+
+    expect(result.selectionIsValid).toBe(false);
+    expect(result.supportedRiskIds).toEqual([]);
+    expect(result.missedRiskIds).toEqual([]);
+    expect(result.supportedReasonSymbolIds).toEqual([]);
+    expect(result.missedReasonSymbolIds).toEqual([]);
+    expect(result.message).toMatch(/선택/);
+  });
+
+  it('keeps duplicate valid selection IDs deterministic and valid', () => {
+    const result = evaluatePrediction({
+      evaluation: evidenceEvaluation,
+      selection: {
+        riskIds: ['heat-damage', 'heat-damage'],
+        reasonSymbolIds: ['care-no-iron', 'care-no-iron'],
+      },
+    });
+
+    expect(result.selectionIsValid).toBe(true);
+    expect(result.supportedRiskIds).toEqual(['heat-damage']);
+    expect(result.supportedReasonSymbolIds).toEqual(['care-no-iron']);
+    expect(result.invalidRiskIds).toEqual([]);
+    expect(result.invalidReasonSymbolIds).toEqual([]);
   });
 });
