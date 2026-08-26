@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { App } from '../App';
-import { renderAppAtStep } from './renderApp';
+import { buildLearnerSessionAtStep, renderAppAtStep } from './renderApp';
+import { missions } from '../content/missions';
+import { planningStages } from './factories';
 
 describe('Task 7 앱 시작 흐름', () => {
   afterEach(() => cleanup());
@@ -82,5 +84,57 @@ describe('Task 7 앱 시작 흐름', () => {
 
     expect(() => renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan', scenario: 'completed-revision' }))
       .toThrow(/report 단계/);
+  });
+
+  it.each(missions)('completed-revision evidence is canonical for %s', (mission) => {
+    const state = buildLearnerSessionAtStep({
+      missionId: mission.id,
+      step: 'report',
+      scenario: 'completed-revision',
+    });
+    expect(state.step).toBe('report');
+    expect(state.initialPlan).not.toEqual(state.revisedPlan);
+    expect(state.initialEvaluation).not.toBeNull();
+    expect(state.revisedEvaluation).not.toBeNull();
+    expect(state.revisionEvidence).not.toBeNull();
+
+    const changedStages = planningStages.filter((stage) =>
+      state.initialPlan!.stageOptions[stage] !== state.revisedPlan!.stageOptions[stage]);
+    expect(state.revisionEvidence!.changedStages).toEqual(changedStages);
+
+    const planEvidence = state.initialEvaluation!.findings
+      .filter(({ status }) => status !== 'allowed')
+      .flatMap(({ relatedSymbolIds }) => relatedSymbolIds);
+    const groupingEvidence = state.initialGroupingEvaluation?.findings
+      .filter(({ code }) => code !== 'compatible-group')
+      .flatMap(({ relatedSymbolIds }) => relatedSymbolIds) ?? [];
+    const canonicalReasons = new Set([...planEvidence, ...groupingEvidence]);
+    expect(state.revisionEvidence!.relatedSymbolIds.length).toBeGreaterThan(0);
+    expect(state.revisionEvidence!.relatedSymbolIds.every((id) => canonicalReasons.has(id))).toBe(true);
+
+    if (mission.id === 'mixed-load') {
+      expect(state.revisionEvidence!.reasonId).toBe('separate-incompatible-garment');
+      expect(state.revisionEvidence!.relatedSymbolIds).toContain('care-professional');
+    } else {
+      expect(state.revisionEvidence!.reasonId).toBe('follow-label-limit');
+    }
+  });
+
+  it('shows the opening prompt exactly once', () => {
+    const mission = missions.find(({ id }) => id === 'basic-t-shirt')!;
+    renderAppAtStep({ missionId: mission.id, step: 'request' });
+    expect(screen.getAllByText(mission.openingPrompt, { exact: true })).toHaveLength(1);
+  });
+
+  it('uses distinct non-answer silhouettes for scarf and sportswear', () => {
+    const scarf = renderAppAtStep({ missionId: 'soft-scarf', step: 'request' });
+    expect(scarf.container.querySelector('[data-illustration-kind="scarf"]')).toBeInTheDocument();
+    expect(scarf.container.querySelector('[data-illustration-kind="shirt"]')).toBeNull();
+    scarf.unmount();
+
+    const sportswear = renderAppAtStep({ missionId: 'sportswear', step: 'request' });
+    expect(sportswear.container.querySelector('[data-illustration-kind="sportswear"]')).toBeInTheDocument();
+    expect(sportswear.container.querySelector('[data-illustration-kind="decorated-top"]')).toBeNull();
+    sportswear.unmount();
   });
 });

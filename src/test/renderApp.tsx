@@ -15,6 +15,7 @@ import {
   type SessionStep,
 } from '../domain/sessionReducer';
 import type { MissionId, StudentPlan } from '../domain/missionTypes';
+import type { CareSymbolId } from '../domain/careTypes';
 import { makePlanFixture } from './factories';
 
 export interface RenderAppAtStepInput {
@@ -26,6 +27,7 @@ export interface RenderAppAtStepInput {
 const sessionSteps: readonly SessionStep[] = [
   'request', 'magnifier', 'plan', 'forecast', 'simulation', 'revision', 'report',
 ];
+const planningStages = ['wash', 'dry', 'iron'] as const;
 
 function fail(message: string): never {
   throw new Error(message);
@@ -109,7 +111,28 @@ function submitPrediction(state: LearnerSession, missionId: MissionId): LearnerS
   return sessionReducer(state, { type: 'SUBMIT_PREDICTION', selection, feedback });
 }
 
-export function renderAppAtStep(input: RenderAppAtStepInput): RenderResult {
+function changedStagesBetween(initialPlan: StudentPlan, revisedPlan: StudentPlan) {
+  return planningStages.filter((stage) => initialPlan.stageOptions[stage] !== revisedPlan.stageOptions[stage]);
+}
+
+function groupingChanged(initialPlan: StudentPlan, revisedPlan: StudentPlan): boolean {
+  if (initialPlan.grouping === null || revisedPlan.grouping === null) return initialPlan.grouping !== revisedPlan.grouping;
+  return initialPlan.grouping.togetherGarmentIds.join('|') !== revisedPlan.grouping.togetherGarmentIds.join('|')
+    || initialPlan.grouping.separateGarmentIds.join('|') !== revisedPlan.grouping.separateGarmentIds.join('|')
+    || initialPlan.grouping.reasonSymbolIds.join('|') !== revisedPlan.grouping.reasonSymbolIds.join('|');
+}
+
+function nonAllowedEvidence(state: LearnerSession): readonly CareSymbolId[] {
+  const planIds = state.initialEvaluation?.findings
+    .filter(({ status }) => status !== 'allowed')
+    .flatMap(({ relatedSymbolIds }) => relatedSymbolIds) ?? [];
+  const groupingIds = state.initialGroupingEvaluation?.findings
+    .filter(({ code }) => code !== 'compatible-group')
+    .flatMap(({ relatedSymbolIds }) => relatedSymbolIds) ?? [];
+  return unique([...planIds, ...groupingIds]);
+}
+
+export function buildLearnerSessionAtStep(input: RenderAppAtStepInput): LearnerSession {
   if (!input || typeof input !== 'object' || !missionById.has(input.missionId)) {
     fail('렌더할 미션 ID가 올바르지 않아요.');
   }
@@ -124,9 +147,9 @@ export function renderAppAtStep(input: RenderAppAtStepInput): RenderResult {
 
   const initialScenario = scenario === 'within-limits' ? 'within-limits' : 'outside-limits';
   let state = sessionReducer(initialLearnerSession, { type: 'SELECT_MISSION', missionId: input.missionId });
-  if (input.step === 'request') return renderWithState(state);
+  if (input.step === 'request') return state;
   state = advanceToMagnifier(input.missionId);
-  if (input.step === 'magnifier') return renderWithState(state);
+  if (input.step === 'magnifier') return state;
 
   state = advanceToPlan(input.missionId);
 
@@ -135,14 +158,14 @@ export function renderAppAtStep(input: RenderAppAtStepInput): RenderResult {
   if (input.step === 'plan') {
     // The reducer owns the plan transition, so restore the canonical predecessor for the plan screen.
     state = advanceToPlan(input.missionId);
-    return renderWithState(state);
+    return state;
   }
   state = submitPrediction(state, input.missionId);
-  if (input.step === 'forecast') return renderWithState(state);
+  if (input.step === 'forecast') return state;
   state = sessionReducer(state, { type: 'SHOW_SIMULATION' });
-  if (input.step === 'simulation') return renderWithState(state);
+  if (input.step === 'simulation') return state;
   state = sessionReducer(state, { type: 'START_REVISION' });
-  if (input.step === 'revision') return renderWithState(state);
+  if (input.step === 'revision') return state;
 
   const mission = missionById.get(input.missionId);
   if (!mission || !state.initialEvaluation) fail('report 선행 자료가 올바르지 않아요.');
@@ -150,11 +173,21 @@ export function renderAppAtStep(input: RenderAppAtStepInput): RenderResult {
   const revisedPlan = scenario === 'within-limits' ? initialPlan : makePlanFixture(input.missionId, 'within-limits');
   const revisedEvaluation = evaluatePlan({ mission, plan: revisedPlan, symbols: careSymbolById, options: careOptionById });
   const revisedGroupingEvaluation = canonicalGrouping(input.missionId, revisedPlan);
-  const relatedSymbolId = mission.garments[0]?.symbolIds[0];
-  if (!relatedSymbolId) fail('report 근거 표시가 없어 렌더할 수 없어요.');
+  const relatedSymbolIds = nonAllowedEvidence(state);
+  const fallbackSymbolId = mission.garments[0]?.symbolIds[0];
+  if (relatedSymbolIds.length === 0 || !fallbackSymbolId) fail('report 근거 표시가 없어 렌더할 수 없어요.');
+  const revisedGroupingChanged = groupingChanged(initialPlan, revisedPlan);
+  const changedStages = changedStagesBetween(initialPlan, revisedPlan);
   const evidence = scenario === 'within-limits'
-    ? { reasonId: 'confirm-current-plan' as const, relatedSymbolIds: [relatedSymbolId], changedStages: [] as const }
-    : { reasonId: 'follow-label-limit' as const, relatedSymbolIds: [relatedSymbolId], changedStages: ['wash', 'dry', 'iron'] as const };
+    ? { reasonId: 'confirm-current-plan' as const, relatedSymbolIds: [fallbackSymbolId], changedStages: [] as const }
+    : {
+      reasonId: revisedGroupingChanged ? 'separate-incompatible-garment' as const : 'follow-label-limit' as const,
+      relatedSymbolIds,
+      changedStages,
+    };
+  if (input.missionId === 'mixed-load' && revisedGroupingChanged && !evidence.relatedSymbolIds.includes('care-professional')) {
+    fail('혼합 미션의 분리 근거 표시가 canonical 평가에 없어요.');
+  }
   state = sessionReducer(state, {
     type: 'SUBMIT_REVISION',
     plan: revisedPlan,
@@ -162,7 +195,11 @@ export function renderAppAtStep(input: RenderAppAtStepInput): RenderResult {
     groupingEvaluation: revisedGroupingEvaluation,
     evidence,
   });
-  return renderWithState(state);
+  return state;
+}
+
+export function renderAppAtStep(input: RenderAppAtStepInput): RenderResult {
+  return renderWithState(buildLearnerSessionAtStep(input));
 }
 
 function renderWithState(state: LearnerSession): RenderResult {

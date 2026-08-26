@@ -1,11 +1,27 @@
 import type { GarmentMission } from '../../domain/missionTypes';
+import type { ReactNode } from 'react';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 
-function GarmentSketch() {
+type IllustrationKind = 'shirt' | 'scarf' | 'sportswear' | 'decorated-top';
+
+function illustrationKind(garmentId: string): IllustrationKind {
+  if (garmentId.includes('scarf')) return 'scarf';
+  if (garmentId.includes('sportswear')) return 'sportswear';
+  if (garmentId === 'decorated-top') return 'decorated-top';
+  return 'shirt';
+}
+
+function GarmentSketch({ garmentId }: { garmentId: string }) {
+  const kind = illustrationKind(garmentId);
+  const paths: Record<IllustrationKind, ReactNode> = {
+    shirt: <><path d="M47 28 67 16h26l20 12 27 20-12 22-17-10v44H49V60l-17 10-12-22 27-20Z" /><path d="M67 17c2 12 24 12 26 0M49 104h62" /></>,
+    scarf: <><path d="M59 16h42v57H59z" /><path d="M59 73H39v31h20M101 73h20v31h-20M65 16v-5M77 16v-5M89 16v-5M47 104v8M113 104v8" /></>,
+    sportswear: <><path d="M54 17h12l14 15 14-15h12l18 22-15 17-9-8v56H60V48l-9 8-15-17 18-22Z" /><path d="M66 18c2 9 22 9 28 0M60 104h51" /></>,
+    'decorated-top': <><path d="M47 28 67 16h26l20 12 27 20-12 22-17-10v44H49V60l-17 10-12-22 27-20Z" /><path d="M67 17c2 12 24 12 26 0M49 104h62M66 57h4M78 68h4M90 57h4" /></>,
+  };
   return (
-    <svg className="garment-sketch" viewBox="0 0 160 120" aria-hidden="true" focusable="false">
-      <path d="M47 28 67 16h26l20 12 27 20-12 22-17-10v44H49V60l-17 10-12-22 27-20Z" />
-      <path d="M67 17c2 12 24 12 26 0M49 104h62" />
+    <svg className="garment-sketch" viewBox="0 0 160 120" aria-hidden="true" focusable="false" data-illustration-kind={kind}>
+      {paths[kind]}
     </svg>
   );
 }
@@ -18,13 +34,12 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
       <div className="request-heading">
         <p className="eyebrow">{mission.order}번째 구조 요청</p>
         <h2 id="request-title">{mission.title.split('의 ')[0]} 구조 요청</h2>
-        <p>{mission.openingPrompt}</p>
       </div>
 
       <div className="garment-list">
         {mission.garments.map((garment) => (
           <article key={garment.id} className="garment-card" data-garment-id={garment.id}>
-            <div className="garment-visual"><GarmentSketch /></div>
+            <div className="garment-visual"><GarmentSketch garmentId={garment.id} /></div>
             <div>
               <h3>{garment.name}</h3>
               <dl className="garment-facts">
