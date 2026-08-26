@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">전문 섬유 관리 확인 학습용 아이콘</title>
+  <desc id="desc">단순화한 원 안에 전문 확인을 뜻하는 P가 있습니다.</desc>
+  <!-- Original local educational redraw; no official asset is embedded. -->
+  <circle cx="60" cy="60" r="43" fill="#fffdf8" stroke="#7757a6" stroke-width="6"/>
+  <text x="60" y="76" fill="#7757a6" font-family="Arial, sans-serif" font-size="44" font-weight="700" text-anchor="middle">P</text>
+  <path d="M28 105h64" fill="none" stroke="#ef8354" stroke-linecap="round" stroke-width="7"/>
+</svg>

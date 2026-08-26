@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">표백 금지 학습용 아이콘</title>
+  <desc id="desc">단순화한 삼각형 안에 금지를 나타내는 엑스가 있습니다.</desc>
+  <!-- Original local educational redraw; no official asset is embedded. -->
+  <path d="M60 14 106 100H14Z" fill="#fffdf8" stroke="#172033" stroke-linejoin="round" stroke-width="6"/>
+  <path d="m39 48 42 35M81 48 39 83" fill="none" stroke="#ef5f5f" stroke-linecap="round" stroke-width="8"/>
+</svg>

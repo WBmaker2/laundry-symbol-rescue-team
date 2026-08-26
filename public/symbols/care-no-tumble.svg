@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">회전식 건조 금지 학습용 아이콘</title>
+  <desc id="desc">단순화한 건조 상자 안 원에 금지를 나타내는 엑스가 있습니다.</desc>
+  <!-- Original local educational redraw; no official asset is embedded. -->
+  <rect x="15" y="14" width="90" height="92" rx="5" fill="#fffdf8" stroke="#172033" stroke-width="6"/>
+  <circle cx="60" cy="59" r="27" fill="none" stroke="#172033" stroke-width="6"/>
+  <path d="m42 41 36 36M78 41 42 77" fill="none" stroke="#ef5f5f" stroke-linecap="round" stroke-width="8"/>
+</svg>
