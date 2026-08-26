@@ -12,7 +12,6 @@ const riskIdSet = new Set(riskIds);
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
-
 function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== '';
 }
@@ -68,4 +67,3 @@ export function validatePublishedSymbolCatalog(symbolMap: ReadonlyMap<string, un
   }
   return validatePublishedContent({ sources, symbols }).length === 0;
 }
-
