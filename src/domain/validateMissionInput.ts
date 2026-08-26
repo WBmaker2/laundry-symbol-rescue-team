@@ -1,5 +1,6 @@
 import type { PlanningStage } from './careTypes';
 import type { GarmentMission } from './missionTypes';
+import { validateCareOptionShape } from './validateCareOption';
 
 export const missionIds = ['basic-t-shirt', 'soft-scarf', 'sportswear', 'decorated-top', 'mixed-load'] as const;
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
@@ -83,7 +84,7 @@ export function validateMissionReferences(
     for (const stage of stages) {
       for (const optionId of materialOptions[stage] as readonly unknown[]) {
         const option = options.get(String(optionId));
-        if (typeof optionId !== 'string' || !isRecord(option) || option.id !== optionId || option.stage !== stage) {
+        if (typeof optionId !== 'string' || validateCareOptionShape(optionId, option, stage) !== null) {
           return `'${garment.name}' 재료 조건의 선택을 확인할 수 없어요.`;
         }
       }

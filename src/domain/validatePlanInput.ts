@@ -5,10 +5,10 @@ import type {
   CareSymbolId,
   DamageRiskId,
   PlanningStage,
-  RelativeLevel,
 } from './careTypes';
 import type { CareOption, GarmentMission, StudentPlan } from './missionTypes';
 import { validateGarmentShape, validateMissionShape } from './validateMissionInput';
+import { validateCareOptionCatalog, validateCareOptionShape } from './validateCareOption';
 
 export interface PlanEvaluationInput {
   mission: GarmentMission;
@@ -28,7 +28,6 @@ const stageLabels: Readonly<Record<PlanningStage, string>> = {
   dry: '건조',
   iron: '다림질',
 };
-const relativeLevels: readonly RelativeLevel[] = ['lower', 'medium', 'higher'];
 const damageRiskIds: readonly DamageRiskId[] = [
   'shrinkage',
   'deformation',
@@ -54,10 +53,6 @@ function isCareStage(value: unknown): value is CareStage {
   return careStages.includes(value as CareStage);
 }
 
-function isRelativeLevel(value: unknown): value is RelativeLevel {
-  return relativeLevels.includes(value as RelativeLevel);
-}
-
 function riskListIssue(value: unknown, source: string): string | null {
   if (!Array.isArray(value) || value.some((riskId) => !damageRiskIds.includes(riskId as DamageRiskId))) {
     return `${source}의 가능성 근거 목록이 올바르지 않아요.`;
@@ -74,28 +69,6 @@ function stringListIssue(value: unknown, source: string): string | null {
     return `${source}의 문자 목록이 올바르지 않아요.`;
   }
   return null;
-}
-
-function optionShapeIssue(
-  key: unknown,
-  value: unknown,
-  expectedStage?: PlanningStage,
-): string | null {
-  if (typeof key !== 'string' || !isRecord(value)) return '선택 목록에 비어 있거나 올바르지 않은 항목이 있어요.';
-  const option = value as Partial<CareOption>;
-  if (option.id !== key || typeof option.id !== 'string') return `'${key}' 선택의 ID가 목록과 달라요.`;
-  if (!isPlanningStage(option.stage)) return `'${key}' 선택의 단계가 올바르지 않아요.`;
-  if (expectedStage !== undefined && option.stage !== expectedStage) {
-    return `'${key}' 선택이 ${stageLabels[expectedStage]} 단계와 맞지 않아요.`;
-  }
-  if (typeof option.label !== 'string' || typeof option.learningDescription !== 'string') {
-    return `'${key}' 선택의 설명이 올바르지 않아요.`;
-  }
-  if (typeof option.requiresAdult !== 'boolean') return `'${key}' 선택의 안전 경계가 올바르지 않아요.`;
-  if (!isRelativeLevel(option.waterUse) || !isRelativeLevel(option.energyUse)) {
-    return `'${key}' 선택의 상대 자원 지표가 올바르지 않아요.`;
-  }
-  return riskListIssue(option.riskIds, `'${key}' 선택`);
 }
 
 function symbolShapeIssue(key: unknown, value: unknown): string | null {
@@ -142,7 +115,7 @@ function optionReferenceIssue(
   if (typeof optionId !== 'string') return `${source}의 선택 ID가 올바르지 않아요.`;
   const option = options.get(optionId);
   if (option === undefined) return `${source} '${optionId}' 선택을 목록에서 찾을 수 없어요.`;
-  return optionShapeIssue(optionId, option, stage);
+  return validateCareOptionShape(optionId, option, stage);
 }
 
 function symbolReferenceIssue(symbolId: unknown, symbols: ReadonlyMap<string, unknown>): string | null {
@@ -155,10 +128,8 @@ function validateMapCatalogs(
   symbols: ReadonlyMap<string, unknown>,
   options: ReadonlyMap<string, unknown>,
 ): string | null {
-  for (const [key, value] of options) {
-    const issue = optionShapeIssue(key, value);
-    if (issue !== null) return issue;
-  }
+  const optionCatalogIssue = validateCareOptionCatalog(options);
+  if (optionCatalogIssue !== null) return optionCatalogIssue;
   for (const [key, value] of symbols) {
     const issue = symbolShapeIssue(key, value);
     if (issue !== null) return issue;

@@ -7,8 +7,10 @@ import { buildLearnerSessionAtStep, renderAppAtStep } from './renderApp';
 import { missions } from '../content/missions';
 import { planningStages } from './factories';
 import { careSymbolById, careSymbols } from '../content/symbols';
+import { careOptionById } from '../content/careOptions';
 import type { CareSymbol } from '../domain/careTypes';
 import { missionById } from '../content/missions';
+import type { CareOption } from '../domain/missionTypes';
 import type { GarmentMission, VirtualGarment } from '../domain/missionTypes';
 import { SymbolFigure } from '../components/ui/SymbolFigure';
 
@@ -371,6 +373,27 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(/표시 자료를 불러올 수 없어요/);
     } finally {
       missionCatalog.set(missionId, original);
+    }
+  });
+
+  it.each([
+    ['빈 label', (option: CareOption) => ({ ...option, label: ' ' })],
+    ['잘못된 requiresAdult', (option: CareOption) => ({ ...option, requiresAdult: 'yes' as unknown as boolean })],
+    ['malformed riskIds', (option: CareOption) => ({ ...option, riskIds: ['not-a-risk'] as unknown as CareOption['riskIds'] })],
+    ['malformed resource level', (option: CareOption) => ({ ...option, waterUse: 'maximum' as CareOption['waterUse'] })],
+    ['option Map key-id 불일치', (option: CareOption) => ({ ...option, id: 'plan-wash-strong-40' as CareOption['id'] })],
+  ])('변조한 %s option catalog는 확대경 진입을 fail-closed 한다', (_label, mutate) => {
+    const optionId = 'plan-wash-gentle-30';
+    const original = careOptionById.get(optionId)! as CareOption;
+    const optionCatalog = careOptionById as unknown as Map<string, unknown>;
+    try {
+      const mutateOption = mutate as unknown as (option: CareOption) => CareOption;
+      optionCatalog.set(optionId, mutateOption(original));
+      renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
+      expect(screen.getByRole('alert')).toHaveTextContent(/표시 자료를 불러올 수 없어요/);
+      expect(screen.queryByRole('img')).toBeNull();
+    } finally {
+      optionCatalog.set(optionId, original);
     }
   });
 
