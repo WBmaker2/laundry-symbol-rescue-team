@@ -2017,6 +2017,8 @@ flowchart LR
 
 **Files:**
 - Create: `e2e/learner-flow.spec.ts`
+- Modify: `src/features/mission/MissionPicker.tsx`
+- Modify: `2026-08-26-laundry-symbol-rescue-team-implementation-plan.md`
 - Modify: `docs/release-checklist.md`
 - Create: `.github/workflows/deploy-pages.yml`
 - Create: `public/app-icon.svg`
@@ -2227,7 +2229,7 @@ flowchart LR
   사용자에게 보이는 최종 수정이 있으면 `src/content/updateHistory.ts`에 실제 날짜와 범주·요약을 추가하고 테스트를 먼저 갱신한다.
 
   ```bash
-  git add e2e/learner-flow.spec.ts docs/release-checklist.md .github/workflows/deploy-pages.yml public/app-icon.svg vite.config.ts README.md src/content/updateHistory.ts src/content/updateHistory.test.ts
+  git add 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md e2e/learner-flow.spec.ts src/features/mission/MissionPicker.tsx docs/release-checklist.md .github/workflows/deploy-pages.yml public/app-icon.svg vite.config.ts README.md src/content/updateHistory.ts src/content/updateHistory.test.ts
   git commit -m "chore: add release and Pages verification gates"
   ```
 

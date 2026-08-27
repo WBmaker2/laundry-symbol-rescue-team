@@ -34,11 +34,20 @@
 ## 개발과 검사
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm test -- src/test/safety-boundaries.test.tsx
 npm run test:e2e -- e2e/safety-boundaries.spec.ts
+npm run test:e2e -- e2e/learner-flow.spec.ts
+npm run build
 npm run check
+npm run test:e2e
 ```
 
 `npm run check`는 린트, 타입 검사, 전체 단위 테스트, 빌드, 정적 자산 검사를 실행합니다. 외부 네트워크 요청 0건, 금지 API 부재, 안전 문구 노출, 실제 학습 흐름은 Task 14 안전 경계 테스트에서 회귀 검증합니다.
+
+## Pages 릴리스 게이트
+
+`.github/workflows/deploy-pages.yml`은 `main` push 또는 `workflow_dispatch`에서 Node 22, `npm ci`, Chromium 설치, `npm run check`, 전체 E2E를 통과한 뒤 GitHub Pages artifact를 배포합니다. Vite의 `base: './'`와 `public/symbols/`의 8개 로컬 SVG를 사용하므로 저장소 하위 경로에서도 정적 자산을 찾을 수 있습니다. `public/app-icon.svg`도 외부 리소스 없이 함께 빌드됩니다.
+
+2026-08-27 현재 5개 미션 전체 learner-flow와 자동 검사 결과를 기록했으며, VoiceOver 수동 읽기 순서와 Chrome 200% 수동 화면 검증은 아직 BLOCKER입니다. 이 두 검증과 별도 승인 전에는 push·workflow 실행·배포를 완료했다고 주장하지 않습니다.

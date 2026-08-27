@@ -10,17 +10,18 @@ export function MissionPicker({ onSelect }: { onSelect: (missionId: MissionId) =
       <p>가상 옷의 재료와 취급 표시를 읽고 관리 순서를 정하는 활동이에요.</p>
       <div className="mission-grid">
         {missions.map((mission) => (
-          <button
-            key={mission.id}
-            type="button"
-            className="mission-card"
-            aria-label={`${mission.title} 미션 선택 — ${mission.learningFocus}`}
-            onClick={() => onSelect(mission.id)}
-          >
-            <span className="mission-order" aria-hidden="true">미션 {mission.order}</span>
-            <strong>{mission.title}</strong>
-            <span>{mission.learningFocus}</span>
-          </button>
+          <article key={mission.id} data-mission-id={mission.id}>
+            <button
+              type="button"
+              className="mission-card"
+              aria-label={`${mission.title} 미션 선택 — ${mission.learningFocus}`}
+              onClick={() => onSelect(mission.id)}
+            >
+              <span className="mission-order" aria-hidden="true">미션 {mission.order}</span>
+              <strong>{mission.title}</strong>
+              <span>{mission.learningFocus}</span>
+            </button>
+          </article>
         ))}
       </div>
       <SafetyNotice />
