@@ -210,7 +210,7 @@
 .comparison-label { font-weight: 800; }
 .comparison-illustration { display: grid; min-height: 3.5rem; place-items: center; background: #f8d9bd; border-radius: 0.5rem; }
 .comparison-garment { font-weight: 800; }
-.comparison-possibility { margin-top: 0.75rem !important; }
+.before-after-comparison .comparison-possibility { margin-top: 0.75rem; }
 .revision-screen > .management-board { box-shadow: none; }
 .revision-reasons label,
 .revision-evidence label { display: flex; gap: 0.55rem; align-items: center; min-height: 44px; }

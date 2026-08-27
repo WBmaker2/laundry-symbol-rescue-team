@@ -5,6 +5,7 @@ import type { GroupingEvaluation } from '../../domain/evaluateGrouping';
 import type { PlanEvaluation } from '../../domain/evaluationTypes';
 import type { RevisionEvidence, RevisionReasonId } from '../../domain/sessionReducer';
 import type { PredictionFeedback } from '../../domain/evaluatePrediction';
+import type { PredictionSelection } from '../../domain/evaluatePrediction';
 import { careSymbolById } from '../../content/symbols';
 import { evaluateGrouping } from '../../domain/evaluateGrouping';
 import { evaluatePlan } from '../../domain/evaluatePlan';
@@ -45,16 +46,27 @@ function findingSymbolIds(evaluation: PlanEvaluation | null, grouping: GroupingE
   return unique([...planIds, ...groupingIds]);
 }
 
+const riskLabels: Readonly<Record<string, string>> = {
+  shrinkage: '줄어듦', deformation: '변형', 'color-change': '색 변화',
+  'decoration-damage': '장식 손상', 'heat-damage': '열 손상',
+};
+
+function garmentNames(mission: GarmentMission, ids: readonly string[]): string {
+  const names = ids.map((id) => mission.garments.find((garment) => garment.id === id)?.name).filter(Boolean);
+  return names.length > 0 ? names.join(', ') : '없음';
+}
+
 export interface RevisionScreenProps {
   mission: GarmentMission;
   initialPlan: StudentPlan;
   initialEvaluation: PlanEvaluation;
   initialGroupingEvaluation: GroupingEvaluation | null;
+  prediction: PredictionSelection | null;
   predictionFeedback: PredictionFeedback | null;
   onSubmit: (plan: StudentPlan, evaluation: PlanEvaluation, groupingEvaluation: GroupingEvaluation | null, evidence: RevisionEvidence) => void;
 }
 
-export function RevisionScreen({ mission, initialPlan, initialEvaluation, initialGroupingEvaluation, predictionFeedback, onSubmit }: RevisionScreenProps) {
+export function RevisionScreen({ mission, initialPlan, initialEvaluation, initialGroupingEvaluation, prediction, predictionFeedback, onSubmit }: RevisionScreenProps) {
   const [reasonId, setReasonId] = useState<RevisionReasonId | null>(null);
   const [relatedSymbolIds, setRelatedSymbolIds] = useState<CareSymbolId[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -144,6 +156,31 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
             <li key={`${finding.code}-${index}`}>{finding.feedback}</li>
           ))}
         </ul>
+      </section>
+
+      {mission.requiresGrouping && initialPlan.grouping && (
+        <section className="initial-grouping" aria-label="최초 그룹 배정" role="region" data-read-only="true">
+          <h3>최초 옷 묶음과 발견</h3>
+          <p><strong>최초 묶음 평가</strong>: {initialGroupingEvaluation?.status === 'ready' ? '허용 범위' : '나누어 살펴볼 부분이 있어요.'}</p>
+          <p data-grouping-assignment="together"><strong>함께</strong>: {garmentNames(mission, initialPlan.grouping.togetherGarmentIds)}</p>
+          <p data-grouping-assignment="separate"><strong>따로</strong>: {garmentNames(mission, initialPlan.grouping.separateGarmentIds)}</p>
+          <p><strong>최초 묶음 근거</strong>: {initialPlan.grouping.reasonSymbolIds.length > 0
+            ? initialPlan.grouping.reasonSymbolIds.map((id) => `${careSymbolById.get(id)?.name ?? id} (${id})`).join(', ')
+            : '선택하지 않았어요.'}</p>
+          {initialGroupingEvaluation?.findings.filter(({ code }) => code !== 'compatible-group').map((finding, index) => (
+            <p key={`${finding.code}-${index}`}>{finding.feedback}</p>
+          ))}
+        </section>
+      )}
+
+      <section className="initial-prediction" aria-label="최초 예측 선택" role="region" data-read-only="true">
+        <h3>최초 예측 선택</h3>
+        <p><strong>선택한 위험</strong>: {prediction && prediction.riskIds.length > 0
+          ? prediction.riskIds.map((id) => `${riskLabels[id] ?? id} (${id})`).join(', ')
+          : '선택하지 않았어요.'}</p>
+        <p><strong>선택한 근거 표시</strong>: {prediction && prediction.reasonSymbolIds.length > 0
+          ? prediction.reasonSymbolIds.map((id) => `${careSymbolById.get(id)?.name ?? id} (${id})`).join(', ')
+          : '선택하지 않았어요.'}</p>
       </section>
 
       <fieldset className="revision-reasons">

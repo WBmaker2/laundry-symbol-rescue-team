@@ -112,6 +112,7 @@ function StepContent({ step }: { step: SessionStep }) {
           initialPlan={state.initialPlan}
           initialEvaluation={state.initialEvaluation}
           initialGroupingEvaluation={state.initialGroupingEvaluation}
+          prediction={state.prediction}
           predictionFeedback={state.predictionFeedback}
           onSubmit={(plan, evaluation, groupingEvaluation, evidence) => dispatch({
             type: 'SUBMIT_REVISION', plan, evaluation, groupingEvaluation, evidence,

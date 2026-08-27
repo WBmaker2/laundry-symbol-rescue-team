@@ -427,4 +427,23 @@ describe('Task 11 가상 결과와 계획 수정', () => {
     await user.click(screen.getByRole('button', { name: '수정 계획 확인' }));
     expect(screen.getByRole('alert')).toHaveTextContent(/바꾼 단계와 근거 표시/);
   });
+  it('keeps virtual stages, static comparisons, resource indicators, and reduced-motion structure in the DOM', () => {
+    const result = renderAppAtStep({ missionId: 'decorated-top', step: 'simulation', scenario: 'outside-limits' });
+    expect([...result.container.querySelectorAll('.virtual-stage')].map((node) => node.getAttribute('data-stage'))).toEqual(['wash', 'dry', 'iron']);
+    expect(result.container.querySelectorAll('.before-after-comparison')).toHaveLength(3);
+    expect(result.container.querySelectorAll('.comparison-possibility')).toHaveLength(3);
+    expect(result.container.querySelectorAll('.comparison-illustration-animated')).toHaveLength(3);
+    expect(result.container.textContent).toContain('물 사용');
+    expect(result.container.textContent).toContain('에너지 사용');
+    expect(result.container.textContent).toContain('이 학습용 결과가 실제 옷의 상태를 보증하지 않아요.');
+    result.unmount();
+  });
+  it('shows mixed-load initial grouping and selected prediction evidence while revising', async () => {
+    const user = userEvent.setup(); renderAppAtStep({ missionId: 'mixed-load', step: 'revision', scenario: 'outside-limits' });
+    expect(screen.getByRole('region', { name: '최초 그룹 배정' })).toHaveTextContent(/함께|따로|전문 섬유 관리/);
+    expect(screen.getByRole('region', { name: '최초 예측 선택' })).toHaveTextContent(/heat-damage|열 손상/);
+    expect(screen.getByRole('region', { name: '최초 그룹 배정' }).querySelector('[data-grouping-assignment="together"]')).toBeInTheDocument(); expect(screen.getByRole('button', { name: /분리 관리 —.*민감한 목도리/ })).toHaveAttribute('aria-pressed', 'false');
+    await user.click(screen.getByRole('button', { name: /분리 관리 —.*민감한 목도리/ })); await user.click(screen.getByRole('checkbox', { name: /전문 섬유 관리 확인 표시를 분리 근거/ }));
+    expect(screen.getByRole('button', { name: /분리 관리 —.*민감한 목도리/ })).toHaveAttribute('aria-pressed', 'true');
+  });
 });

@@ -1560,6 +1560,8 @@ flowchart LR
 - Modify: `src/features/plan/ManagementBoardScreen.tsx`
 - Modify: `src/app/AppShell.tsx`
 - Modify: `src/test/app-flow.test.tsx`
+- Modify: `src/app/app-shell.css`
+- Modify: `src/styles/motion.css`
 
 **Interfaces:**
 - Consumes: `initialPlan`, `initialEvaluation`, `initialGroupingEvaluation`, `predictionFeedback`, `RevisionEvidence`, `START_REVISION`, `SUBMIT_REVISION`, revised `GroupingEvaluation`.
@@ -1621,7 +1623,7 @@ flowchart LR
 - [ ] **Step 7: 가상 결과·수정 커밋을 만든다**
 
   ```bash
-  git add src/features/simulation/BeforeAfterComparison.tsx src/features/simulation/VirtualCareScreen.tsx src/features/revision/RevisionScreen.tsx src/features/plan/ManagementBoardScreen.tsx src/app/AppShell.tsx src/test/app-flow.test.tsx
+  git add src/features/simulation/BeforeAfterComparison.tsx src/features/simulation/VirtualCareScreen.tsx src/features/revision/RevisionScreen.tsx src/features/plan/ManagementBoardScreen.tsx src/app/AppShell.tsx src/app/app-shell.css src/styles/motion.css src/test/app-flow.test.tsx
   git commit -m "feat: add virtual outcome and plan revision"
   ```
 
