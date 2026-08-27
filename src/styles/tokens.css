@@ -7,6 +7,8 @@
   --color-accent: #e77855;
   --color-accent-dark: #a6422b;
   --color-card: #fffdf8;
+  --color-border: rgb(36 49 58 / 22%);
+  --color-focus: #e77855;
   --radius-card: 1.25rem;
   --shadow-card: 0 0.5rem 1.5rem rgb(36 49 58 / 10%);
 }

@@ -16,7 +16,7 @@ export function BeforeAfterComparison({ stageLabel, before, after, possibility }
   return (
     <article className="before-after-comparison" aria-label={`${stageLabel} 전후 비교`}>
       <h4>{stageLabel} 전후 비교</h4>
-      <div className="comparison-panels">
+      <div className="comparison-panels static-before-after">
         <section className="comparison-panel" aria-label={`${stageLabel} 변화 전`}>
           <p className="comparison-label">변화 전</p>
           <div className="comparison-illustration" role="img" aria-label={`가상 옷 ${stageLabel} 변화 전`}>
@@ -27,7 +27,7 @@ export function BeforeAfterComparison({ stageLabel, before, after, possibility }
         <section className="comparison-panel" aria-label={`${stageLabel} 변화 후`}>
           <p className="comparison-label">변화 후</p>
           <div className="comparison-illustration comparison-illustration-animated" role="img" aria-label={`가상 옷 ${stageLabel} 변화 후`}>
-            <span className="comparison-garment comparison-garment-after" aria-hidden="true">옷</span>
+            <span className="comparison-garment comparison-garment-after animated-garment-state" aria-hidden="true">옷</span>
           </div>
           <p>{after}</p>
         </section>

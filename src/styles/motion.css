@@ -19,6 +19,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    animation-duration: 0.001ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.001ms;
+  }
+
   .gi-pulse,
   .comparison-illustration-animated .comparison-garment-after { animation: none; }
+
+  .animated-garment-state { display: none; }
+  .static-before-after { display: grid; }
 }

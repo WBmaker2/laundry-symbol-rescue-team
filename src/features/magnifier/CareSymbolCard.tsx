@@ -39,7 +39,12 @@ export function CareSymbolCard({ symbol, attempt, onChoose }: CareSymbolCardProp
   }
 
   return (
-    <article className="care-symbol-card" data-symbol-id={symbol.id} aria-labelledby={`symbol-card-title-${symbol.id}`}>
+    <article
+      className="care-symbol-card"
+      data-symbol-id={symbol.id}
+      aria-labelledby={`symbol-card-title-${symbol.id}`}
+      aria-label={`${symbol.name} 표시. ${symbol.shortDescription} 현재 계획에서 허용 범위를 확인하는 표시예요.`}
+    >
       <div className="symbol-card-heading">
         <p className="eyebrow">현재 살펴볼 표시</p>
         <h2 id={`symbol-card-title-${symbol.id}`}>{symbol.name}</h2>

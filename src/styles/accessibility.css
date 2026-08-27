@@ -1,0 +1,156 @@
+/* Shared classroom accessibility affordances. Keep these selectors scoped so
+ * the authored component styles remain easy to audit and override. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  overflow-wrap: anywhere;
+}
+
+button {
+  min-height: 44px;
+}
+
+label:has(input[type='radio']),
+label:has(input[type='checkbox']) {
+  min-height: 44px;
+}
+
+input[type='radio'],
+input[type='checkbox'] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline: 4px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.required-action::after {
+  content: '필수';
+  display: inline-block;
+  margin-inline-start: 0.5rem;
+  padding: 0.1rem 0.35rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.72em;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+.source-links,
+.source-links a,
+code,
+pre {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.app-footer {
+  padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+  padding-inline-end: env(safe-area-inset-right, 0px);
+}
+
+@media (max-width: 45rem) {
+  .mission-grid,
+  .care-option-grid,
+  .risk-card-grid,
+  .plan-stage-list,
+  .comparison-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .app-header,
+  .app-main,
+  .app-footer {
+    width: min(100% - 1rem, 72rem);
+  }
+
+  .app-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .update-history-button {
+    align-self: flex-end;
+  }
+}
+
+.app-shell[data-contrast='high'] button,
+.app-shell[data-contrast='high'] input,
+.app-shell[data-contrast='high'] summary {
+  border-width: 3px;
+}
+
+.app-shell[data-contrast='high'] button,
+.app-shell[data-contrast='high'] input,
+.app-shell[data-contrast='high'] summary {
+  border-color: var(--color-border);
+}
+
+.app-shell[data-contrast='high'] .mission-picker,
+.app-shell[data-contrast='high'] .request-screen,
+.app-shell[data-contrast='high'] .magnifier-screen,
+.app-shell[data-contrast='high'] .forecast-screen,
+.app-shell[data-contrast='high'] .virtual-care-screen,
+.app-shell[data-contrast='high'] .revision-screen,
+.app-shell[data-contrast='high'] .rescue-report-screen,
+.app-shell[data-contrast='high'] .management-board,
+.app-shell[data-contrast='high'] .care-symbol-card,
+.app-shell[data-contrast='high'] .report-section,
+.app-shell[data-contrast='high'] .plan-stage,
+.app-shell[data-contrast='high'] .current-plan-summary,
+.app-shell[data-contrast='high'] .care-option-card,
+.app-shell[data-contrast='high'] .grouping-board,
+.app-shell[data-contrast='high'] .risk-card,
+.app-shell[data-contrast='high'] .evidence-list,
+.app-shell[data-contrast='high'] .before-after-comparison {
+  border-color: var(--color-border);
+}
+
+.app-shell[data-contrast='high'] .care-option-card.is-selected,
+.app-shell[data-contrast='high'] .stage-place-button[aria-pressed='true'],
+.app-shell[data-contrast='high'] .grouping-choice[aria-pressed='true'],
+.app-shell[data-contrast='high'] .risk-card.is-selected {
+  border-width: 4px;
+}
+
+.app-shell[data-contrast='high'] .care-option-card.is-selected::before,
+.app-shell[data-contrast='high'] .stage-place-button[aria-pressed='true']::after,
+.app-shell[data-contrast='high'] .grouping-choice[aria-pressed='true']::after,
+.app-shell[data-contrast='high'] .risk-card.is-selected .risk-mark::after {
+  content: '✓ 선택됨';
+  font-weight: 800;
+}
+
+.app-shell[data-contrast='high'] .care-option-card.is-selected::before {
+  display: block;
+}
+
+.app-shell[data-contrast='high'] .stage-place-button[aria-pressed='true']::after,
+.app-shell[data-contrast='high'] .grouping-choice[aria-pressed='true']::after {
+  margin-inline-start: 0.35rem;
+}
+
+.app-shell[data-contrast='high'] .risk-card.is-selected .risk-mark::after {
+  display: block;
+  font-size: 0.58rem;
+}
+
+.app-shell[data-contrast='high'] .symbol-image,
+.app-shell[data-contrast='high'] .symbol-image-expanded {
+  image-rendering: crisp-edges;
+  border-width: 4px;
+  border-color: var(--color-border);
+}

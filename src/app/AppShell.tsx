@@ -15,7 +15,6 @@ import { RescueReportScreen } from '../features/report/RescueReportScreen';
 import { UpdateHistoryButton } from '../features/updates/UpdateHistoryButton';
 import { UpdateHistoryDialog } from '../features/updates/UpdateHistoryDialog';
 import './app-shell.css';
-import '../styles/motion.css';
 
 function StepContent({ step }: { step: SessionStep }) {
   const { state, dispatch } = useLearnerSession();
