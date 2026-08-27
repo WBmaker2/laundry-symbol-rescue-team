@@ -1751,13 +1751,14 @@ flowchart LR
 ### Task 13: Verify responsive, keyboard, screen-reader, contrast, zoom, and reduced-motion behavior
 
 **Files:**
+- Modify: `2026-08-26-laundry-symbol-rescue-team-implementation-plan.md`
 - Create: `docs/release-checklist.md`
 - Create: `src/styles/accessibility.css`
 - Modify: `src/styles/tokens.css`
-- Modify: `src/styles/base.css`
 - Modify: `src/styles/layout.css`
 - Modify: `src/styles/motion.css`
 - Modify: `src/main.tsx`
+- Modify: `src/app/AppShell.tsx`
 - Create: `playwright.config.ts`
 - Create: `e2e/accessibility.spec.ts`
 - Create: `e2e/responsive.spec.ts`
@@ -1765,10 +1766,10 @@ flowchart LR
 - Modify: `src/features/magnifier/CareSymbolCard.tsx`
 - Modify: `src/features/plan/CurrentPlanSummary.tsx`
 - Modify: `src/features/revision/RevisionScreen.tsx`
+- Modify: `src/features/simulation/BeforeAfterComparison.tsx`
 - Modify: `src/test/factories.ts`
-- Modify: `src/domain/evaluatePlan.test.ts`
-- Modify: `src/test/app-flow.test.tsx`
 - Modify: `src/test/plan-flow.test.tsx`
+- Modify: `vitest.config.ts`
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
@@ -1892,7 +1893,7 @@ flowchart LR
 - [ ] **Step 8: 접근성 커밋을 만든다**
 
   ```bash
-  git add package.json package-lock.json playwright.config.ts src/styles/accessibility.css src/styles/tokens.css src/styles/base.css src/styles/layout.css src/styles/motion.css src/main.tsx src/content/missions.ts src/features/magnifier/CareSymbolCard.tsx src/features/plan/CurrentPlanSummary.tsx src/features/revision/RevisionScreen.tsx src/test/factories.ts src/domain/evaluatePlan.test.ts src/test/app-flow.test.tsx src/test/plan-flow.test.tsx e2e/accessibility.spec.ts e2e/responsive.spec.ts docs/release-checklist.md 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
+  git add 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md docs/release-checklist.md e2e/accessibility.spec.ts e2e/responsive.spec.ts package-lock.json package.json playwright.config.ts src/app/AppShell.tsx src/content/missions.ts src/features/magnifier/CareSymbolCard.tsx src/features/plan/CurrentPlanSummary.tsx src/features/revision/RevisionScreen.tsx src/features/simulation/BeforeAfterComparison.tsx src/main.tsx src/styles/accessibility.css src/styles/layout.css src/styles/motion.css src/styles/tokens.css src/test/factories.ts src/test/plan-flow.test.tsx vitest.config.ts
   git commit -m "feat: meet classroom accessibility requirements"
   ```
 
