@@ -7,6 +7,7 @@ import type { LearnerSession, RevisionEvidence, RevisionReasonId } from '../../d
 import { careSymbolById } from '../../content/symbols';
 import { sources } from '../../content/sources';
 import { ManagementCard } from './ManagementCard';
+import { SafetyNotice } from '../../components/ui/SafetyNotice';
 
 const riskLabels: Readonly<Record<DamageRiskId, string>> = {
   shrinkage: '줄어듦', deformation: '변형', 'color-change': '색 변화',
@@ -136,7 +137,7 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
 
       <section className="report-section" aria-label="수정 계획" role="region">
         <h3>수정 계획</h3>
-        <ManagementCard title="수정한 세탁·건조·다림질 계획" mission={mission} plan={revisedPlan} evaluation={revisedEvaluation} groupingEvaluation={revisedGroupingEvaluation} changedStages={changed} />
+        <ManagementCard title="수정한 세탁·건조·다림질 계획" mission={mission} plan={revisedPlan} evaluation={revisedEvaluation} groupingEvaluation={revisedGroupingEvaluation} changedStages={changed} includeLabelNotice={false} />
         <p><strong>수정 이유</strong>: {reasonLabels[revisionEvidence.reasonId]} (<code>{revisionEvidence.reasonId}</code>)</p>
         <p><strong>바뀐 단계</strong>: {changed.length > 0 ? changed.join(', ') : '바뀐 단계 없음'}</p>
         <p><strong>근거 표시</strong>: {evidenceNames.join(', ')}</p>
@@ -150,10 +151,12 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
 
       <section className="report-section responsible-care-evidence" aria-label="responsible-care evidence" role="region">
         <h3>책임 있는 관리와 도움 요청</h3>
-        <p>제품 라벨과 제조사 안내, 보호자·교사의 안내를 먼저 확인하는 것이 안전한 관리의 출발점이에요.</p>
-        <p>실제 다리미, 뜨거운 물, 표백제, 세탁기는 학생 혼자 조작하지 않아요. 어려운 표시는 보호자·교사와 함께 확인해요.</p>
+        <p>제품 정보를 보호자·교사와 함께 살펴보는 것이 안전한 관리의 출발점이에요.</p>
+        <p>전문 관리가 필요하거나 모르는 표시는 보호자·교사 또는 제품 공식 안내에 확인하기</p>
         <p>이번 보고서의 근거: {summary.responsibleCare ? evidenceNames.join(', ') : '근거를 확인하지 못했어요.'}</p>
       </section>
+
+      <SafetyNotice />
     </section>
   );
 }

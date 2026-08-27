@@ -50,7 +50,7 @@ export interface VirtualCareScreenProps {
 
 export function VirtualCareScreen({ mission, plan, evaluation, predictionFeedback, onStartRevision }: VirtualCareScreenProps) {
   return (
-    <section className="virtual-care-screen" data-app-step="simulation" aria-labelledby="virtual-care-title">
+    <section className="virtual-care-screen" data-app-step="simulation" aria-labelledby="virtual-care-title" aria-describedby="virtual-care-boundary">
       <p className="eyebrow">다섯 번째 단계</p>
       <h2 id="virtual-care-title">가상 결과 확인</h2>
       <p><strong>현재 미션</strong>: {mission.title}</p>
@@ -95,7 +95,7 @@ export function VirtualCareScreen({ mission, plan, evaluation, predictionFeedbac
         <p>정확한 양이 아닌 가상 조건의 상대 비교예요.</p>
       </section>
 
-      <p className="learning-boundary">이 학습용 결과가 실제 옷의 상태를 보증하지 않아요.</p>
+      <p id="virtual-care-boundary" className="learning-boundary">이 학습용 결과가 실제 옷의 상태를 보증하지 않아요.</p>
       <SafetyNotice />
       <button type="button" className="simulation-action" onClick={onStartRevision}>계획 수정하기</button>
     </section>
