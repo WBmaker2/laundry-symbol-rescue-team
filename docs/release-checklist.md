@@ -16,6 +16,10 @@
 | 2026-08-27 | `dist/index.html`·`dist/symbols/*.svg`·`dist/app-icon.svg` | PASS · index 510 bytes, 공개 심볼 SVG 8개 및 local app icon 생성·확인 |
 | 2026-08-27 | `npm run test -- --run src/domain/evaluatePlan.test.ts src/test/app-flow.test.tsx src/test/plan-flow.test.tsx` | PASS · sportswear `care-iron-low` fixture와 status 다중 노드 회귀 포함 115 tests |
 | 2026-08-27 | `rg -n 'overflow-x:\s*hidden|!important' src -g '*.css'` | PASS · 일치 0건; overflow masking 없이 scrollWidth와 실제 bounds로 검사 |
+| 2026-08-27 | `git commit -m "fix: preserve Pages subpath in browser checks"` 및 `git push origin main` | PASS · `f1844ef`를 `WBmaker2/laundry-symbol-rescue-team:main`에 푸시 |
+| 2026-08-27 | [Actions run 33041179080](https://github.com/WBmaker2/laundry-symbol-rescue-team/actions/runs/33041179080) | PASS · `f1844ef`에서 `npm run check`, 전체 E2E 19개, Pages artifact 업로드·Deploy 성공 |
+| 2026-08-27 | `curl -L -I https://wbmaker2.github.io/laundry-symbol-rescue-team/` 및 공개 SVG URL 2개 | PASS · HTML·`app-icon.svg`·`care-wash-30-gentle.svg` HTTP 200, HTML 제목 `세탁표시 구조대` |
+| 2026-08-27 | `BASE_URL=https://wbmaker2.github.io/laundry-symbol-rescue-team/ npx playwright test` | PASS · 공개 Pages 저장소 하위 경로에서 Chromium 19/19, 18.1초 |
 
 ## 환경별 확인
 
@@ -27,12 +31,13 @@
 | 모바일 reflow | Chromium CSS viewport 375×812 및 320×812 | E2E로 가로 스크롤·1열·업데이트 버튼을 검증 |
 | 고대비 | 앱 고대비 토글, 선택 상태 | E2E로 색·경계 굵기·문자/아이콘 차이를 검증 |
 | 모션 감소 | `prefers-reduced-motion: reduce` | E2E로 필수 배지 유지와 장식 모션 제거를 검증 |
+| 공개 Pages | `https://wbmaker2.github.io/laundry-symbol-rescue-team/` | HTTP 200·제목·아이콘·심볼 자산 및 전체 브라우저 learner-flow 19/19 확인 |
 
 ## 출시 전 체크와 blockers
 
 - [PASS] 자동 E2E 13개(접근성·반응형)와 `npm run check` 19개 파일/218개 단위·통합 테스트를 2026-08-27에 통과했습니다. native control 이름, 8개 심볼 완전 집합, 단계별 겹침·clipping 검사를 포함합니다.
 - [PASS] Task 15 learner-flow 자동 E2E가 5개 미션 모두에서 표시 해석 → 범위 밖 최초 계획 → 가능성 예측 → 허용 범위 수정 → 구조 보고서·실제 라벨 안전 문구까지 통과했습니다.
-- [PASS] Task 15 자동 게이트: `npm run check`, `npm run test:e2e`, `git diff --check`, 파일 크기, `dist/index.html` 및 8개 로컬 SVG 자산을 2026-08-27에 확인했습니다. 배포 workflow는 파일만 준비했으며 실행하지 않았습니다.
+- [PASS] Task 15 자동 게이트와 Pages 배포: `npm run check`, `npm run test:e2e`, `git diff --check`, 파일 크기, `dist/index.html` 및 8개 로컬 SVG 자산을 2026-08-27에 확인했습니다. `f1844ef`의 [Actions run 33041179080](https://github.com/WBmaker2/laundry-symbol-rescue-team/actions/runs/33041179080)이 모든 검사·artifact·Deploy를 성공시켰고, 공개 Pages에서 전체 19개 브라우저 시나리오를 다시 통과했습니다.
 - [PASS] 안전 경계 자동 검사에서 외부 origin 요청 0건, 파일·이름·학급·브랜드 입력 0개와 금지 API 부재를 확인했습니다. 실제 라벨 우선·가상 결과 한계 문구는 계획·결과·보고서에 표시됩니다.
 - [BLOCKER] 미실행 — 기본 티셔츠의 표시 해석·최초 계획·예측·수정·구조 보고서 완료 화면 증거가 아직 없습니다. 담당 교사 또는 성인 검토자, 실제 교실/개별 기기 환경, 검토 시작/종료 시각, 미션별 완료 화면 캡처가 필요하며 자동 learner-flow E2E PASS는 인간 화면 증거를 대체하지 않습니다.
 - [BLOCKER] 미실행 — 포근한 목도리의 표시 해석·최초 계획·예측·수정·구조 보고서 완료 화면 증거가 아직 없습니다. 담당 교사 또는 성인 검토자, 실제 교실/개별 기기 환경, 검토 시작/종료 시각, 미션별 완료 화면 캡처가 필요하며 자동 learner-flow E2E PASS는 인간 화면 증거를 대체하지 않습니다.
