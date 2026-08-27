@@ -12,6 +12,7 @@ export function UpdateHistoryButton({ expanded, onClick, buttonRef }: UpdateHist
       ref={buttonRef}
       type="button"
       className="update-history-button"
+      data-placement="bottom-right"
       aria-expanded={expanded}
       aria-controls="update-history-dialog"
       onClick={onClick}

@@ -13,6 +13,10 @@ import { missionById } from '../content/missions';
 import type { CareOption } from '../domain/missionTypes';
 import type { GarmentMission, VirtualGarment } from '../domain/missionTypes';
 import { SymbolFigure } from '../components/ui/SymbolFigure';
+import { AppShell } from '../app/AppShell';
+import { LearnerSessionProvider } from '../app/LearnerSessionProvider';
+import { evaluatePrediction } from '../domain/evaluatePrediction';
+import { achievementSummary } from '../features/report/RescueReportScreen';
 describe('Task 7 앱 시작 흐름', () => {
   afterEach(() => cleanup());
   it('다섯 미션을 제목과 학습 초점이 함께 읽히는 버튼으로 보여 준다', () => {
@@ -154,6 +158,48 @@ describe('Task 7 앱 시작 흐름', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: '업데이트 내역' })).not.toBeInTheDocument();
     expect(button).toHaveFocus();
+  });
+  it('keeps the update action at the mobile bottom-right contract', () => {
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'report' });
+    const button = screen.getByRole('button', { name: '업데이트 내역' });
+    expect(button).toHaveAttribute('data-placement', 'bottom-right');
+    expect(button).toHaveClass('update-history-button');
+    expect(button.closest('footer')).toHaveClass('app-footer');
+  });
+  it('does not turn an unsupported selected risk into another predicted risk', () => {
+    const state = buildLearnerSessionAtStep({ missionId: 'decorated-top', step: 'report', scenario: 'outside-limits' });
+    const initialEvaluation = state.initialEvaluation!;
+    const evaluationWithoutHeat = {
+      ...initialEvaluation,
+      findings: initialEvaluation.findings.map((finding) => ({
+        ...finding,
+        riskIds: finding.riskIds.filter((riskId) => riskId !== 'heat-damage'),
+      })),
+    };
+    const reasonSymbolId = state.prediction!.reasonSymbolIds[0]!;
+    const selection = { riskIds: ['heat-damage'] as const, reasonSymbolIds: [reasonSymbolId] as const };
+    const feedback = evaluatePrediction({ evaluation: evaluationWithoutHeat, selection });
+    const result = render(
+      <LearnerSessionProvider initialState={{ ...state, initialEvaluation: evaluationWithoutHeat, prediction: selection, predictionFeedback: feedback }}>
+        <AppShell />
+      </LearnerSessionProvider>,
+    );
+    const riskRegion = screen.getByRole('region', { name: '예측한 손상 가능성과 관련 표시' });
+    expect(riskRegion).toHaveTextContent(/선택했지만 초기 평가 근거가 없는 위험.*열 손상/);
+    const predictedLine = [...riskRegion.querySelectorAll('li')].find((line) => line.textContent?.includes('예측한 가능성(평가가 연결된 위험)'));
+    expect(predictedLine).toHaveTextContent(/연결된 위험 없음/);
+    expect(predictedLine).not.toHaveTextContent(/줄어듦|변형|색 변화|장식 손상/);
+    expect(achievementSummary({
+      missionId: state.missionId,
+      interpretations: state.interpretations,
+      initialEvaluation: evaluationWithoutHeat,
+      initialGroupingEvaluation: state.initialGroupingEvaluation,
+      predictionFeedback: { ...feedback, supportedRiskIds: [], supportedReasonSymbolIds: [reasonSymbolId] },
+      revisedEvaluation: state.revisedEvaluation,
+      revisedGroupingEvaluation: state.revisedGroupingEvaluation,
+      revisionEvidence: state.revisionEvidence,
+    }, missionById.get('decorated-top')!).connectedRiskEvidence).toBe(false);
+    result.unmount();
   });
   it('shows the opening prompt exactly once', () => {
     const mission = missions.find(({ id }) => id === 'basic-t-shirt')!;

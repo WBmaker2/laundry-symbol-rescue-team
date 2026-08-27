@@ -1643,6 +1643,7 @@ flowchart LR
 - Create: `src/content/updateHistory.test.ts`
 - Create: `src/components/ui/AppDialog.tsx`
 - Modify: `src/app/AppShell.tsx`
+- Modify: `src/app/app-shell.css`
 - Modify: `src/test/app-flow.test.tsx`
 
 **Interfaces:**
@@ -1740,7 +1741,7 @@ flowchart LR
 - [ ] **Step 6: 보고서·업데이트 커밋을 만든다**
 
   ```bash
-  git add src/features/report/ManagementCard.tsx src/features/report/RescueReportScreen.tsx src/features/updates/UpdateHistoryButton.tsx src/features/updates/UpdateHistoryDialog.tsx src/content/updateHistory.ts src/content/updateHistory.test.ts src/components/ui/AppDialog.tsx src/app/AppShell.tsx src/test/app-flow.test.tsx
+  git add src/features/report/ManagementCard.tsx src/features/report/RescueReportScreen.tsx src/features/updates/UpdateHistoryButton.tsx src/features/updates/UpdateHistoryDialog.tsx src/content/updateHistory.ts src/content/updateHistory.test.ts src/components/ui/AppDialog.tsx src/app/AppShell.tsx src/app/app-shell.css src/test/app-flow.test.tsx
   git commit -m "feat: add rescue report and update history"
   ```
 

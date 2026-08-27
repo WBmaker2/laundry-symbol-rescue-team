@@ -39,7 +39,8 @@ export function achievementSummary(state: Pick<LearnerSession, 'missionId' | 'in
     interpretedAllSymbols: state.missionId === mission.id && symbolIds.every((id) => state.interpretations.some((attempt) => attempt.symbolId === id && attempt.isCorrect)),
     combinedRestrictions: state.initialEvaluation?.status === 'ready' && (!mission.requiresGrouping || state.initialGroupingEvaluation?.status === 'ready'),
     connectedRiskEvidence: state.predictionFeedback?.selectionIsValid === true
-      && (state.predictionFeedback.supportedRiskIds.length > 0 || state.predictionFeedback.supportedReasonSymbolIds.length > 0),
+      && state.predictionFeedback.supportedRiskIds.length > 0
+      && state.predictionFeedback.supportedReasonSymbolIds.length > 0,
     revisedPlan: state.revisedEvaluation?.status === 'ready' && (!mission.requiresGrouping || state.revisedGroupingEvaluation?.status === 'ready'),
     responsibleCare: state.revisionEvidence !== null && state.revisionEvidence.relatedSymbolIds.length > 0,
   };
@@ -56,16 +57,8 @@ function changedStages(initialPlan: StudentPlan, revisedPlan: StudentPlan): read
   return (['wash', 'dry', 'iron'] as const).filter((stage) => initialPlan.stageOptions[stage] !== revisedPlan.stageOptions[stage]);
 }
 
-function predictionRisks(evaluation: PlanEvaluation, feedback: PredictionFeedback | null): readonly DamageRiskId[] {
-  const found = evaluation.findings.filter(({ status }) => status !== 'allowed').flatMap(({ riskIds }) => riskIds);
-  const selected = feedback?.supportedRiskIds ?? [];
-  return unique(selected.length > 0 ? selected : found) as DamageRiskId[];
-}
-
-function predictionSymbols(evaluation: PlanEvaluation, feedback: PredictionFeedback | null): readonly CareSymbolId[] {
-  const selected = feedback?.supportedReasonSymbolIds ?? [];
-  const found = evaluation.findings.filter(({ status }) => status !== 'allowed').flatMap(({ relatedSymbolIds }) => relatedSymbolIds);
-  return unique(selected.length > 0 ? selected : found) as CareSymbolId[];
+function names<T extends string>(ids: readonly T[], labels: Readonly<Record<T, string>>): string {
+  return ids.map((id) => labels[id]).join(', ') || '없음';
 }
 
 export interface RescueReportScreenProps {
@@ -87,8 +80,14 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
   const symbolIds = unique(mission.garments.flatMap(({ symbolIds: ids }) => ids));
   const summary = achievementSummary({ missionId: mission.id, interpretations: props.interpretations, initialEvaluation, initialGroupingEvaluation, predictionFeedback, revisedEvaluation, revisedGroupingEvaluation, revisionEvidence }, mission);
   const changed = changedStages(initialPlan, revisedPlan);
-  const risks = predictionRisks(initialEvaluation, predictionFeedback);
-  const predictedSymbols = predictionSymbols(initialEvaluation, predictionFeedback);
+  const selectedRisks = prediction?.riskIds ?? [];
+  const selectedReasons = prediction?.reasonSymbolIds ?? [];
+  const supportedRisks = predictionFeedback?.supportedRiskIds ?? [];
+  const unsupportedRisks = predictionFeedback?.unsupportedRiskIds ?? [];
+  const missedRisks = predictionFeedback?.missedRiskIds ?? [];
+  const supportedReasons = predictionFeedback?.supportedReasonSymbolIds ?? [];
+  const unsupportedReasons = predictionFeedback?.unsupportedReasonSymbolIds ?? [];
+  const missedReasons = predictionFeedback?.missedReasonSymbolIds ?? [];
   const evidenceNames = revisionEvidence.relatedSymbolIds.map((id) => careSymbolById.get(id)?.name ?? id);
   return (
     <section className="rescue-report-screen" data-app-step="report" aria-labelledby="rescue-report-title">
@@ -119,10 +118,19 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
         <ManagementCard title="최초 세탁·건조·다림질 계획" mission={mission} plan={initialPlan} evaluation={initialEvaluation} groupingEvaluation={initialGroupingEvaluation} includeLabelNotice={false} />
       </section>
 
-      <section className="report-section" aria-labelledby="risk-title">
+      <section className="report-section" aria-labelledby="risk-title" aria-label="예측한 손상 가능성과 관련 표시" role="region">
         <h3 id="risk-title">예측한 손상 가능성과 관련 표시</h3>
-        <p>{prediction ? '처음 계획에서 걱정되는 가능성을 표시와 연결해 살펴봤어요.' : '예측 선택 자료가 없어요.'}</p>
-        <ul>{risks.length > 0 ? risks.map((risk) => <li key={risk}>{riskLabels[risk]} 가능성 · 관련 표시: {predictedSymbols.map((id) => careSymbolById.get(id)?.name ?? id).join(', ') || '표시 근거 없음'}</li>) : <li>현재 가상 조건에서 연결된 손상 가능성이 없어요.</li>}</ul>
+        <p>{prediction ? '학생이 고른 위험·근거 표시와 평가 결과를 구분해 살펴봐요.' : '예측 선택 자료가 없어요.'}</p>
+        <ul>
+          <li><strong>학생이 선택한 위험</strong>: {names(selectedRisks, riskLabels)}</li>
+          <li><strong>예측한 가능성(평가가 연결된 위험)</strong>: {supportedRisks.length > 0 ? names(supportedRisks, riskLabels) : '연결된 위험 없음 · 근거 부족'}</li>
+          <li><strong>선택했지만 초기 평가 근거가 없는 위험</strong>: {names(unsupportedRisks, riskLabels)}</li>
+          <li><strong>평가에서 놓친 위험</strong>: {names(missedRisks, riskLabels)}</li>
+          <li><strong>학생이 선택한 근거 표시</strong>: {names(selectedReasons, Object.fromEntries(selectedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
+          <li><strong>평가가 연결한 근거 표시</strong>: {names(supportedReasons, Object.fromEntries(supportedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
+          <li><strong>선택했지만 초기 평가 근거가 없는 표시</strong>: {names(unsupportedReasons, Object.fromEntries(unsupportedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
+          <li><strong>평가에서 놓친 표시</strong>: {names(missedReasons, Object.fromEntries(missedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
+        </ul>
         <p>{predictionFeedback?.message ?? '실제 옷의 상태를 예측하는 결과가 아니에요.'}</p>
       </section>
 

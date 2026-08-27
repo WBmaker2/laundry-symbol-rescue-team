@@ -300,5 +300,6 @@
 
 @media (max-width: 34rem) {
   .app-footer { align-items: flex-start; flex-direction: column; }
+  .update-history-button { align-self: flex-end; }
   .update-history-list li { grid-template-columns: 1fr; gap: 0.15rem; }
 }
