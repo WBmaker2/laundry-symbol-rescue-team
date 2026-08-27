@@ -50,4 +50,4 @@ npm run test:e2e
 
 `.github/workflows/deploy-pages.yml`은 `main` push 또는 `workflow_dispatch`에서 Node 22, `npm ci`, Chromium 설치, `npm run check`, 전체 E2E를 통과한 뒤 GitHub Pages artifact를 배포합니다. Vite의 `base: './'`와 `public/symbols/`의 8개 로컬 SVG를 사용하므로 저장소 하위 경로에서도 정적 자산을 찾을 수 있습니다. `public/app-icon.svg`도 외부 리소스 없이 함께 빌드됩니다.
 
-2026-08-27 현재 5개 미션 전체 learner-flow와 자동 검사 결과를 기록했으며, VoiceOver 수동 읽기 순서와 Chrome 200% 수동 화면 검증은 아직 BLOCKER입니다. 이 두 검증과 별도 승인 전에는 push·workflow 실행·배포를 완료했다고 주장하지 않습니다.
+2026-08-27 현재 5개 미션 전체 learner-flow와 자동 검사 결과를 기록했지만, 이는 실제 학생·교사 화면 검토나 성인 25~35분 완주 기록을 뜻하지 않습니다. 5개 미션별 완료 화면 증거, 대표 미션의 검토자·환경·시작/종료 시각, VoiceOver 수동 읽기 순서와 Chrome 200% 수동 화면 검증은 아직 BLOCKER입니다. 자동 E2E 실행 시간은 이 인간 검토 증거를 대체하지 않으며, 필요한 수동 증거와 별도 승인 전에는 push·workflow 실행·배포를 완료했다고 주장하지 않습니다.

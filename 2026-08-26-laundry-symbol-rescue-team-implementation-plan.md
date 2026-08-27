@@ -2022,7 +2022,7 @@ flowchart LR
 - Modify: `docs/release-checklist.md`
 - Create: `.github/workflows/deploy-pages.yml`
 - Create: `public/app-icon.svg`
-- Modify: `vite.config.ts`
+- Verify: `vite.config.ts`
 - Modify: `README.md`
 - Modify: `src/content/updateHistory.ts`
 - Modify: `src/content/updateHistory.test.ts`
@@ -2212,24 +2212,24 @@ flowchart LR
 
 - [ ] **Step 6: 설계 완료 기준을 수동 검증하고 체크리스트를 닫는다**
 
-  `docs/release-checklist.md`에 다음 실제 증거를 기록한다.
+  `docs/release-checklist.md`에 다음 실제 증거를 기록한다. 자동 검사 결과는 자동 증거로만 기록하고, 사람의 검토·시간·화면 증거가 실행되지 않았으면 해당 행을 `[BLOCKER] 미실행`으로 남긴다. 자동 E2E 실행 시간이나 PASS를 인간 수용 증거로 바꾸지 않는다.
 
   - 8개 공개 표시 각각의 공식 출처 링크·검수일·표시 종류
-  - 5개 미션별 네 핵심 단계 완료 스크린 확인
-  - 교사 또는 성인 검토자의 대표 미션 1회 완주 시간이 25~35분 범위인지 확인하고 시작·종료 시각 기록
+  - 교사 또는 성인 검토자가 확인한 5개 미션별 핵심 단계 완료 화면 증거
+  - 교사 또는 성인 검토자의 대표 미션 1회 완주 시간이 25~35분 범위인지 확인하고 검토자·환경·시작·종료 시각 기록
   - 375px, 200% 확대, 고대비, 모션 감소, 키보드, VoiceOver 결과
   - 실제 라벨 우선 문구가 계획 결과·가상 결과·보고서에 존재
   - 위험한 실제 행동 지시, 개인 데이터 입력, 외부 요청이 없음
   - `dist/index.html` 및 8개 SVG asset이 존재
 
-  모든 행에는 검증 날짜, 환경, PASS 결과를 기록한다. 실패 행이 있으면 Pages workflow를 실행하지 않는다.
+  자동 행에는 검증 날짜·환경·PASS/FAIL 결과를 기록하고, 수동 행에는 실제 검토자·환경·시작·종료 시각과 증거를 기록한다. 수동 검증을 실행하지 않았으면 날짜를 꾸며내지 말고 `[BLOCKER] 미실행`과 필요한 증거를 기록한다. 실패 또는 미실행 행이 있으면 Pages workflow를 실행하지 않는다.
 
 - [ ] **Step 7: 릴리스 준비 커밋을 만든다**
 
   사용자에게 보이는 최종 수정이 있으면 `src/content/updateHistory.ts`에 실제 날짜와 범주·요약을 추가하고 테스트를 먼저 갱신한다.
 
   ```bash
-  git add 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md e2e/learner-flow.spec.ts src/features/mission/MissionPicker.tsx docs/release-checklist.md .github/workflows/deploy-pages.yml public/app-icon.svg vite.config.ts README.md src/content/updateHistory.ts src/content/updateHistory.test.ts
+  git add 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md e2e/learner-flow.spec.ts src/features/mission/MissionPicker.tsx docs/release-checklist.md .github/workflows/deploy-pages.yml public/app-icon.svg README.md src/content/updateHistory.ts src/content/updateHistory.test.ts
   git commit -m "chore: add release and Pages verification gates"
   ```
 

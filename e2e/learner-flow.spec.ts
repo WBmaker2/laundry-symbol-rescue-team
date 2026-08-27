@@ -24,6 +24,8 @@ for (const missionId of missionIds) {
     await submitPrediction(page, missionId);
     await revisePlan(page, missionId);
     await expect(page.getByRole('heading', { name: '구조 보고서' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '최초 계획' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '수정 계획' })).toBeVisible();
     await expect(page.getByText(/실제 옷에서는 제품 라벨/)).toBeVisible();
   });
 }
