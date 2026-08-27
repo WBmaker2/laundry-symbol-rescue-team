@@ -64,7 +64,7 @@ const sportswear = garment(
   '합성 섬유 모형 운동복',
   '합성 섬유 재료 모형',
   '운동 뒤 땀이 묻었다고 가정한 가상 상황이에요. 실제 흡수량이나 기능을 측정하지 않아요.',
-  ['care-wash-30-gentle', 'care-no-bleach', 'care-tumble-low', 'care-no-iron'],
+  ['care-wash-30-gentle', 'care-no-bleach', 'care-tumble-low', 'care-iron-low'],
   stageOptions(
     ['plan-wash-gentle-30', 'plan-wash-pause-and-ask'],
     ['plan-dry-line', 'plan-dry-tumble-low', 'plan-dry-pause-and-ask'],

@@ -29,7 +29,7 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
     await user.click(screen.getByRole('button', { name: '관리 계획 확인' }));
     expect(screen.getByRole('heading', { name: '세탁 단계' })).toHaveFocus();
-    expect(screen.getByRole('status')).toHaveTextContent(/세탁·건조·다림질 단계를 모두/);
+    expect(screen.getAllByRole('status').some((status) => /세탁·건조·다림질 단계를 모두/.test(status.textContent ?? ''))).toBe(true);
   });
 
   it('계획 제출은 모든 단계를 채우고 제한을 확인한 뒤 다음 단계로 이동한다', async () => {

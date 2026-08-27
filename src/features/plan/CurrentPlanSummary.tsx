@@ -26,7 +26,7 @@ export function CurrentPlanSummary({
   return (
     <section className="current-plan-summary" aria-label="현재 관리 계획" role="region">
       <h2>현재 관리 계획</h2>
-      <p aria-live="polite">{filled}/3단계가 배치되었어요. 순서: 세탁 → 건조 → 다림질</p>
+      <p role="status" aria-live="polite">{filled}/3단계가 배치되었어요. 순서: 세탁 → 건조 → 다림질</p>
       <ol className="plan-summary-list">
         {stages.map((stage) => {
           const optionId = stageOptions[stage];

@@ -1761,6 +1761,14 @@ flowchart LR
 - Create: `playwright.config.ts`
 - Create: `e2e/accessibility.spec.ts`
 - Create: `e2e/responsive.spec.ts`
+- Modify: `src/content/missions.ts`
+- Modify: `src/features/magnifier/CareSymbolCard.tsx`
+- Modify: `src/features/plan/CurrentPlanSummary.tsx`
+- Modify: `src/features/revision/RevisionScreen.tsx`
+- Modify: `src/test/factories.ts`
+- Modify: `src/domain/evaluatePlan.test.ts`
+- Modify: `src/test/app-flow.test.tsx`
+- Modify: `src/test/plan-flow.test.tsx`
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
@@ -1862,6 +1870,8 @@ flowchart LR
   - 대화상자 열기, Escape 닫기, 호출 버튼으로 focus 복귀
   - `aria-current`, `aria-pressed`, radio/checkbox 이름, `aria-live` 결과 확인
   - 모든 기호의 접근 가능한 이름에 기호명·허용 여부·현재 계획 맥락 포함
+  - canonical `careSymbolIds` 8개가 learner-facing 미션에서 모두 실제 방문되는지 확인
+  - 후속 화면의 카드·fieldset·region bounding box 겹침과 viewport clipping을 실제 경로에서 확인
 
   Chrome 수동 검증에서는 브라우저 Zoom을 정확히 200%로 설정하고 1280×800 창에서 미션 선택부터 구조 보고서까지 진행한다. 텍스트 잘림, 조작 겹침, 가로 스크롤, focus 가림이 없는 결과를 체크리스트에 기록한다.
 
@@ -1882,7 +1892,7 @@ flowchart LR
 - [ ] **Step 8: 접근성 커밋을 만든다**
 
   ```bash
-  git add package.json package-lock.json playwright.config.ts src/styles/accessibility.css src/styles/tokens.css src/styles/base.css src/styles/layout.css src/styles/motion.css src/main.tsx e2e/accessibility.spec.ts e2e/responsive.spec.ts docs/release-checklist.md
+  git add package.json package-lock.json playwright.config.ts src/styles/accessibility.css src/styles/tokens.css src/styles/base.css src/styles/layout.css src/styles/motion.css src/main.tsx src/content/missions.ts src/features/magnifier/CareSymbolCard.tsx src/features/plan/CurrentPlanSummary.tsx src/features/revision/RevisionScreen.tsx src/test/factories.ts src/domain/evaluatePlan.test.ts src/test/app-flow.test.tsx src/test/plan-flow.test.tsx e2e/accessibility.spec.ts e2e/responsive.spec.ts docs/release-checklist.md 2026-08-26-laundry-symbol-rescue-team-implementation-plan.md
   git commit -m "feat: meet classroom accessibility requirements"
   ```
 

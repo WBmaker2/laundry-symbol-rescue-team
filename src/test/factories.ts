@@ -38,7 +38,7 @@ function withinLimitOptions(missionId: MissionId): Readonly<Record<PlanningStage
     case 'soft-scarf':
       return { wash: 'plan-wash-pause-and-ask', dry: 'plan-dry-flat', iron: 'plan-iron-none' };
     case 'sportswear':
-      return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-tumble-low', iron: 'plan-iron-none' };
+      return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-tumble-low', iron: 'plan-iron-low-with-adult' };
     case 'decorated-top':
       return { wash: 'plan-wash-gentle-30', dry: 'plan-dry-flat', iron: 'plan-iron-none' };
     case 'mixed-load':

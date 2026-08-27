@@ -18,9 +18,31 @@ async function assertVisibleWithinViewport(page: Page, selector: string) {
   expect(clipped).toEqual([]);
 }
 
+async function assertNoOverlappingSiblings(page: Page, selector: string) {
+  const violations = await page.locator(selector).evaluateAll((elements) => {
+    const boxes = elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { element, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+    }).filter(({ width, height }) => width > 0 && height > 0);
+    const problems: string[] = [];
+    for (let i = 0; i < boxes.length; i += 1) {
+      const a = boxes[i];
+      if (a.left < 0 || a.right > window.innerWidth) problems.push(`out-of-bounds:${i}`);
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const b = boxes[j];
+        if (a.element.contains(b.element) || b.element.contains(a.element)) continue;
+        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) problems.push(`overlap:${i}:${j}`);
+      }
+    }
+    return problems;
+  });
+  expect(violations, `overlap or clipping in ${selector}`).toEqual([]);
+}
+
 async function assertStepLayout(page: Page, selector = 'button, fieldset, [role="region"]') {
   await assertNoHorizontalOverflow(page);
   await assertVisibleWithinViewport(page, selector);
+  await assertNoOverlappingSiblings(page, selector);
 }
 
 async function assertSingleColumn(page: Page, selector: string) {
@@ -73,6 +95,7 @@ async function driveFirstMission(page: Page, stopAt: 'plan' | 'forecast' | 'simu
   await page.getByRole('button', { name: '수정 계획 확인' }).press('Enter');
   await expect(page.locator('section.rescue-report-screen')).toBeVisible();
   await assertStepLayout(page, 'button, [role="region"], .report-section');
+  await assertNoOverlappingSiblings(page, '.report-symbol-list, .report-section');
 }
 
 test.describe('responsive classroom layout', () => {
@@ -97,7 +120,15 @@ test.describe('responsive classroom layout', () => {
       await assertVisibleWithinViewport(page, 'button, fieldset, [role="region"], .report-section');
       const sourceWraps = await page.locator('.source-links a').evaluateAll((elements) => elements.every((element) => getComputedStyle(element).overflowWrap === 'anywhere'));
       expect(sourceWraps).toBe(true);
-      await expect(page.locator('.update-history-button')).toHaveCSS('min-height', '44px');
+      const updatePosition = await page.locator('.update-history-button').evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const footer = element.closest('.app-footer')?.getBoundingClientRect();
+        return { right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height, footerBottom: footer?.bottom ?? 0 };
+      });
+      expect(updatePosition.right).toBeLessThanOrEqual(width);
+      expect(updatePosition.bottom).toBeLessThanOrEqual(updatePosition.footerBottom);
+      expect(updatePosition.width).toBeGreaterThanOrEqual(44);
+      expect(updatePosition.height).toBeGreaterThanOrEqual(44);
     }
   });
 
@@ -112,6 +143,17 @@ test.describe('responsive classroom layout', () => {
     await driveFirstMission(page, 'report', false);
     await assertNoHorizontalOverflow(page);
     await assertVisibleWithinViewport(page, '[data-app-step="report"] button, [data-app-step="report"] [role="region"], .report-section');
+    await assertNoOverlappingSiblings(page, '[data-app-step="report"] button, [data-app-step="report"] [role="region"], .report-section');
+    await assertSingleColumn(page, '.report-symbol-list');
+    const updatePosition = await page.locator('.update-history-button').evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const footer = element.closest('.app-footer')?.getBoundingClientRect();
+      return { right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height, footerBottom: footer?.bottom ?? 0 };
+    });
+    expect(updatePosition.right).toBeLessThanOrEqual(1280);
+    expect(updatePosition.bottom).toBeLessThanOrEqual(updatePosition.footerBottom);
+    expect(updatePosition.width).toBeGreaterThanOrEqual(44);
+    expect(updatePosition.height).toBeGreaterThanOrEqual(44);
   });
 
   test('makes high contrast and selected states distinguishable beyond color', async ({ page }) => {
