@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { MissionPicker } from '../features/mission/MissionPicker';
 import { RescueRequestScreen } from '../features/mission/RescueRequestScreen';
 import { HighContrastToggle } from '../components/ui/HighContrastToggle';
@@ -11,25 +11,11 @@ import { ManagementBoardScreen } from '../features/plan/ManagementBoardScreen';
 import { DamageForecastScreen } from '../features/forecast/DamageForecastScreen';
 import { VirtualCareScreen } from '../features/simulation/VirtualCareScreen';
 import { RevisionScreen } from '../features/revision/RevisionScreen';
+import { RescueReportScreen } from '../features/report/RescueReportScreen';
+import { UpdateHistoryButton } from '../features/updates/UpdateHistoryButton';
+import { UpdateHistoryDialog } from '../features/updates/UpdateHistoryDialog';
 import './app-shell.css';
 import '../styles/motion.css';
-
-function FutureStepPlaceholder({ step, title, reportReady }: { step: Exclude<SessionStep, 'request'>; title: string; reportReady?: boolean }) {
-  return (
-    <section className="future-placeholder" data-app-step={step} aria-labelledby={`${step}-placeholder-title`}>
-      <p className="eyebrow">다음 학습 단계</p>
-      <h2 id={`${step}-placeholder-title`}>{title} 준비 화면</h2>
-      <p>이 단계의 학습 활동은 다음 구현에서 이어집니다. 아직 완료된 것으로 표시하지 않아요.</p>
-      <p>현재는 앞 단계의 내용을 확인한 뒤 다음 안내를 기다려 주세요.</p>
-      {reportReady && (
-        <div className="report-preview" aria-label="보고서 자료 미리 보기">
-          <p><strong>최초 계획</strong>: 앞 단계에서 만든 자료가 보관되어 있어요.</p>
-          <p><strong>수정 계획</strong>: 앞 단계에서 확인한 자료가 보관되어 있어요.</p>
-        </div>
-      )}
-    </section>
-  );
-}
 
 function StepContent({ step }: { step: SessionStep }) {
   const { state, dispatch } = useLearnerSession();
@@ -120,7 +106,28 @@ function StepContent({ step }: { step: SessionStep }) {
         />
       );
     }
-    case 'report': return <FutureStepPlaceholder step={step} title="구조 보고서" reportReady={state.revisedPlan !== null} />;
+    case 'report': {
+      if (state.missionId === null || !state.initialPlan || !state.initialEvaluation || !state.revisedPlan || !state.revisedEvaluation || !state.revisionEvidence) {
+        throw new Error('구조 보고서에 필요한 세션 자료가 없습니다.');
+      }
+      const mission = missionById.get(state.missionId);
+      if (!mission) throw new Error('구조 보고서의 미션을 찾을 수 없습니다.');
+      return (
+        <RescueReportScreen
+          mission={mission}
+          interpretations={state.interpretations}
+          initialPlan={state.initialPlan}
+          initialEvaluation={state.initialEvaluation}
+          initialGroupingEvaluation={state.initialGroupingEvaluation}
+          prediction={state.prediction}
+          predictionFeedback={state.predictionFeedback}
+          revisedPlan={state.revisedPlan}
+          revisedEvaluation={state.revisedEvaluation}
+          revisedGroupingEvaluation={state.revisedGroupingEvaluation}
+          revisionEvidence={state.revisionEvidence}
+        />
+      );
+    }
     default: {
       const unknownStep: never = step;
       throw new Error(`알 수 없는 학습 단계예요: ${String(unknownStep)}`);
@@ -131,6 +138,8 @@ function StepContent({ step }: { step: SessionStep }) {
 export function AppShell() {
   const { state } = useLearnerSession();
   const [highContrast, setHighContrast] = useState(false);
+  const [updateHistoryOpen, setUpdateHistoryOpen] = useState(false);
+  const updateHistoryButtonRef = useRef<HTMLButtonElement>(null);
   const mission = state.missionId === null ? null : missionById.get(state.missionId);
 
   return (
@@ -150,7 +159,19 @@ export function AppShell() {
       <main className="app-main" data-app-step={state.step}>
         <StepContent step={state.step} />
       </main>
-      <footer className="app-footer">가상 학습 도구 · 실제 제품 안내를 대신하지 않아요.</footer>
+      <footer className="app-footer">
+        <span>가상 학습 도구 · 실제 제품 안내를 대신하지 않아요.</span>
+        <UpdateHistoryButton
+          buttonRef={updateHistoryButtonRef}
+          expanded={updateHistoryOpen}
+          onClick={() => setUpdateHistoryOpen((open) => !open)}
+        />
+      </footer>
+      <UpdateHistoryDialog
+        open={updateHistoryOpen}
+        onClose={() => setUpdateHistoryOpen(false)}
+        triggerRef={updateHistoryButtonRef}
+      />
     </div>
   );
 }

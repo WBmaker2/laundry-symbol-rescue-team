@@ -130,6 +130,31 @@ describe('Task 7 앱 시작 흐름', () => {
     expect(result.container.querySelector('[data-app-step="report"]')).toBeInTheDocument();
     result.unmount();
   });
+  it('shows initial and revised plans with responsible-care evidence', () => {
+    renderAppAtStep({
+      missionId: 'decorated-top',
+      step: 'report',
+      scenario: 'completed-revision',
+    });
+    expect(screen.getByRole('heading', { name: '구조 보고서' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '최초 계획' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '수정 계획' })).toBeInTheDocument();
+    expect(screen.getByText(/실제 옷에서는 제품 라벨/)).toBeInTheDocument();
+    expect(screen.getByText(/낮음|보통|높음/)).toBeInTheDocument();
+    expect(screen.getByText(/책임 있는 관리/)).toBeInTheDocument();
+  });
+  it('opens update history and returns focus to its small button', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'report' });
+    const button = screen.getByRole('button', { name: '업데이트 내역' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    await user.click(button);
+    expect(screen.getByRole('dialog', { name: '업데이트 내역' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '닫기' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: '업데이트 내역' })).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
   it('shows the opening prompt exactly once', () => {
     const mission = missions.find(({ id }) => id === 'basic-t-shirt')!;
     renderAppAtStep({ missionId: mission.id, step: 'request' });
