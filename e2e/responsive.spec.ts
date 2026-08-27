@@ -102,7 +102,7 @@ test.describe('responsive classroom layout', () => {
   test('reflows the picker at 375px and 320px without horizontal scroll', async ({ page }) => {
     for (const width of [375, 320]) {
       await page.setViewportSize({ width, height: 812 });
-      await page.goto('/');
+      await page.goto('./');
       await assertNoHorizontalOverflow(page);
       const tracks = await page.locator('.mission-grid').evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
       expect(tracks).toBe(1);
@@ -113,7 +113,7 @@ test.describe('responsive classroom layout', () => {
   test('keeps the first mission path inside 375px and 320px bounds', async ({ page }) => {
     for (const width of [375, 320]) {
       await page.setViewportSize({ width, height: 812 });
-      await page.goto('/');
+      await page.goto('./');
       await driveFirstMission(page);
       await expect(page.getByRole('heading', { name: '구조 보고서' })).toBeVisible();
       await assertNoHorizontalOverflow(page);
@@ -134,7 +134,7 @@ test.describe('responsive classroom layout', () => {
 
   test('keeps controls and cards usable at 200% root font size', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
+    await page.goto('./');
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
     await expect(page.locator('.app-shell')).toBeVisible();
     await assertNoHorizontalOverflow(page);
@@ -157,7 +157,7 @@ test.describe('responsive classroom layout', () => {
   });
 
   test('makes high contrast and selected states distinguishable beyond color', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     const shell = page.locator('.app-shell');
     const normal = await shell.evaluate((element) => {
       const button = element.querySelector('button');
@@ -177,7 +177,7 @@ test.describe('responsive classroom layout', () => {
     await expect(selected).toHaveCSS('min-height', '44px');
     await expect(page.getByRole('button', { name: '표시 크게 보기' })).toBeVisible();
 
-    await page.goto('/');
+    await page.goto('./');
     await page.getByRole('button', { name: '고대비 모드' }).press('Enter');
     await driveFirstMission(page, 'plan', false);
     await page.locator('[data-care-option-id="plan-wash-gentle-30"]').press('Enter');
@@ -202,14 +202,14 @@ test.describe('responsive classroom layout', () => {
   test('uses one-column grids and reduced-motion static comparison at representative screens', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/');
+    await page.goto('./');
     await driveFirstMission(page, 'simulation');
     await expect(page.locator('.app-shell')).toHaveAttribute('data-contrast', 'normal');
     await expect(page.locator('.static-before-after').first()).toHaveCSS('display', 'grid');
     await expect(page.locator('.animated-garment-state').first()).toHaveCSS('display', 'none');
     const comparisonTracks = await page.locator('.comparison-panels').first().evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
     expect(comparisonTracks).toBe(1);
-    await page.goto('/');
+    await page.goto('./');
     await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).press('Enter');
     await expect(page.getByRole('button', { name: '표시 확대' })).toHaveCSS('animation-name', 'none');
     await expect(page.getByRole('button', { name: '표시 확대' })).toHaveCSS('min-height', '44px');
@@ -218,7 +218,7 @@ test.describe('responsive classroom layout', () => {
   });
 
   test('keeps every visible interactive control at least 44px tall', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     const tooSmall = await page.locator('button, input[type="radio"], input[type="checkbox"], label').evaluateAll((elements) => elements
       .filter((element) => {
         const style = getComputedStyle(element);

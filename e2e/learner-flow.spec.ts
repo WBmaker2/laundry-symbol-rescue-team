@@ -17,7 +17,7 @@ const missionIds = [
 
 for (const missionId of missionIds) {
   test(`${missionId} completes interpretation, plan, prediction, revision, and report`, async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await chooseMission(page, missionId);
     await completeInterpretations(page, missionId);
     await submitInitialPlan(page, missionId);

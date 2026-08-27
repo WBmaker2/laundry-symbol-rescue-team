@@ -12,7 +12,7 @@ test('keeps a local-only, safety-bounded learner completion path', async ({ page
     const url = new URL(request.url());
     if (url.origin !== appOrigin) forbiddenRequests.push(request.url());
   });
-  await page.goto('/');
+  await page.goto('./');
   appOrigin = new URL(page.url()).origin;
   await page.reload();
 

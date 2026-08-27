@@ -36,7 +36,7 @@ async function expectStatus(page: Page, scope: string, text: RegExp) {
 
 test.describe('classroom accessibility', () => {
   test('shows focus and has no critical or serious axe violations', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await page.keyboard.press('Tab');
     await expect(page.locator(':focus-visible')).toBeVisible();
     const results = await new AxeBuilder({ page }).analyze();
@@ -44,7 +44,7 @@ test.describe('classroom accessibility', () => {
   });
 
   test('exposes progress, pressed controls, native choices, and computed symbol context', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await expect(page.getByRole('navigation', { name: '학습 진행 7단계' })).toBeVisible();
     await expect(page.locator('[aria-current="step"]')).toHaveCount(1);
     await expect(page.getByRole('button', { name: '고대비 모드' })).toHaveAttribute('aria-pressed', 'false');
@@ -63,7 +63,7 @@ test.describe('classroom accessibility', () => {
   });
 
   test('advances the first mission with the real keyboard tab order only', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await tabTo(page, '.mission-card', 0);
     await expect(page.locator('.mission-card').first()).toBeFocused();
     await page.keyboard.press('Enter');
@@ -149,7 +149,7 @@ test.describe('classroom accessibility', () => {
     const missionNames = [/기본 티셔츠의 세탁/, /부드러운 목도리의 강한/, /운동복의 낮은/, /장식이 붙은 상의의 제한/, /서로 다른 세 벌/];
     const symbolIds = new Set<string>();
     for (const missionName of missionNames) {
-      await page.goto('/');
+      await page.goto('./');
       await page.getByRole('button', { name: missionName }).click();
       await page.getByRole('button', { name: '표시 확대' }).click();
       for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -168,7 +168,7 @@ test.describe('classroom accessibility', () => {
   });
 
   test('opens the update dialog, traps focus, and returns focus on Escape', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     const trigger = page.getByRole('button', { name: '업데이트 내역' });
     await trigger.focus();
     await page.keyboard.press('Enter');
@@ -184,7 +184,7 @@ test.describe('classroom accessibility', () => {
 
   test('keeps required action text and removes decorative motion when requested', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
+    await page.goto('./');
     await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).click();
     const required = page.getByRole('button', { name: '표시 확대' });
     await expect(required).toHaveClass(/required-action/);
@@ -194,7 +194,7 @@ test.describe('classroom accessibility', () => {
   });
 
   test('announces evaluation results and exposes named native controls', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).click();
     await page.getByRole('button', { name: '표시 확대' }).click();
     await expectNamedControls(page, 'radio');
