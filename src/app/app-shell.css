@@ -136,7 +136,7 @@
 .risk-card-copy { display: grid; gap: 0.25rem; }
 .risk-card-copy h3 { font-size: 1rem; }
 .risk-card-copy p { color: var(--color-muted); font-size: 0.9rem; }
-.risk-possibility { color: var(--color-accent-dark) !important; font-weight: 800; }
+.risk-card-copy .risk-possibility { color: var(--color-accent-dark); font-weight: 800; }
 
 .risk-choice,
 .evidence-item {
