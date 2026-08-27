@@ -132,6 +132,7 @@ laundry-symbol-rescue-team/
 ├── src/
 │   ├── app/
 │   │   ├── AppShell.tsx
+│   │   ├── app-shell.css (앱 셸의 화면·상태별 레이아웃과 결과·위험 표시 스타일)
 │   │   ├── LearnerSessionProvider.tsx
 │   │   ├── LearnerSessionProvider.test.tsx
 │   │   └── useLearnerSession.ts
@@ -197,6 +198,7 @@ laundry-symbol-rescue-team/
 │   │   ├── factories.ts
 │   │   ├── renderApp.tsx
 │   │   ├── safety-boundaries.test.tsx
+│   │   ├── simulation-flow.test.tsx (가상 결과와 단계별 위험 격리 회귀 테스트)
 │   │   └── setup.ts
 │   ├── App.test.tsx
 │   ├── App.tsx
