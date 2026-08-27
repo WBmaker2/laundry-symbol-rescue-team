@@ -35,9 +35,10 @@ export interface ManagementCardProps {
   evaluation: PlanEvaluation;
   groupingEvaluation: GroupingEvaluation | null;
   changedStages?: readonly PlanningStage[];
+  includeLabelNotice?: boolean;
 }
 
-export function ManagementCard({ title, mission, plan, evaluation, groupingEvaluation, changedStages = [] }: ManagementCardProps) {
+export function ManagementCard({ title, mission, plan, evaluation, groupingEvaluation, changedStages = [], includeLabelNotice = true }: ManagementCardProps) {
   const symbolIds = unique(mission.garments.flatMap(({ symbolIds: ids }) => ids));
   return (
     <article className="management-card">
@@ -71,6 +72,7 @@ export function ManagementCard({ title, mission, plan, evaluation, groupingEvalu
       {groupingEvaluation?.findings.filter(({ code }) => code !== 'compatible-group').map((finding, index) => (
         <p key={`${finding.code}-${index}`} className="management-finding">{finding.feedback}</p>
       ))}
+      {includeLabelNotice && <p>실제 옷에서는 제품 라벨과 제조사 안내, 보호자·교사의 안내를 먼저 확인하세요.</p>}
       <p className="learning-boundary">학습용 선택 카드이며 실제 옷의 상태나 결과를 보증하지 않아요.</p>
     </article>
   );
