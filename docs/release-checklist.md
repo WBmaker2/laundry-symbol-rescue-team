@@ -7,7 +7,7 @@
 | 2026-08-27 | `npm install -D @playwright/test@latest @axe-core/playwright@latest` | PASS · Playwright 1.62.1과 Axe 4.13.0 설치, 취약점 0건 |
 | 2026-08-27 | `npx playwright install chromium` | PASS · Chromium 런타임 설치 완료 |
 | 2026-08-27 | `npm run test:e2e -- e2e/accessibility.spec.ts e2e/responsive.spec.ts` (구현 전 기준) | FAIL 기록 완료 · 375/320px 1열, 고대비 경계 굵기, 기호 카드 문맥, 필수 배지 계약이 구현 전 깨짐 |
-| 2026-08-27 | `npm run test:e2e -- e2e/accessibility.spec.ts e2e/responsive.spec.ts` (구현 후) | PASS · 10 tests, Chromium 1 worker; macOS 샌드박스 권한 오류를 피하기 위해 승인된 권한으로 실행 |
+| 2026-08-27 | `npm run test:e2e -- e2e/accessibility.spec.ts e2e/responsive.spec.ts` (구현 후) | PASS · 13 tests, Chromium 1 worker; 전체 학습 경로·semantic names/status·375/320 bounds·200%·고대비·reduced-motion 포함 |
 | 2026-08-27 | `npm run check` | PASS · lint, typecheck, Vitest 211 tests, production build, Pages asset smoke(2 HTML references·8 SVG) |
 
 ## 환경별 확인

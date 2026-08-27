@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+async function expectNamedControls(page: import('@playwright/test').Page, role: 'radio' | 'checkbox') {
+  const controls = await page.getByRole(role).all();
+  for (const control of controls) {
+    const name = await control.evaluate((element) => element.getAttribute('aria-label') || element.closest('label')?.textContent?.trim() || '');
+    expect(name.length).toBeGreaterThan(0);
+  }
+}
+
 test.describe('classroom accessibility', () => {
   test('shows focus and has no critical or serious axe violations', async ({ page }) => {
     await page.goto('/');
@@ -26,25 +34,59 @@ test.describe('classroom accessibility', () => {
     await expect(symbolCard.locator('label')).toHaveCount(3);
     await expect(symbolCard.getByRole('button', { name: '뜻 확인' })).toBeVisible();
 
+    const unnamedChoices = await page.locator('input[type="radio"], input[type="checkbox"]').evaluateAll((elements) => elements
+      .filter((element) => !element.getAttribute('aria-label') && !element.id && !element.closest('label'))
+      .map((element) => element.outerHTML));
+    expect(unnamedChoices).toEqual([]);
+
     await page.getByRole('button', { name: '고대비 모드' }).click();
     await expect(page.getByRole('button', { name: '고대비 모드' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('advances the first mission with keyboard controls only', async ({ page }) => {
     await page.goto('/');
-    const mission = page.getByRole('button', { name: /기본 티셔츠의 세탁/ });
-    await mission.focus();
-    await page.keyboard.press('Enter');
-    const openMagnifier = page.getByRole('button', { name: '표시 확대' });
-    await openMagnifier.focus();
-    await page.keyboard.press('Enter');
-    const firstRadio = page.locator('input[type="radio"]').first();
-    await firstRadio.focus();
-    await page.keyboard.press('Space');
-    const confirm = page.getByRole('button', { name: '뜻 확인' });
-    await confirm.focus();
-    await page.keyboard.press('Enter');
-    await expect(page.getByText(/맞아요|다시 생각/).first()).toBeVisible();
+    await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).press('Enter');
+    await expect(page.locator('[data-app-step="request"]')).toBeVisible();
+    await page.getByRole('button', { name: '표시 확대' }).press('Enter');
+
+    for (let symbolIndex = 0; symbolIndex < 3; symbolIndex += 1) {
+      const radio = page.locator('input[type="radio"]').first();
+      await radio.press('ArrowUp');
+      await radio.press('Space');
+      await page.getByRole('button', { name: '뜻 확인' }).press('Enter');
+      if (symbolIndex < 2) await expect(page.locator('section.magnifier-screen')).toBeVisible();
+    }
+
+    await expect(page.locator('[data-app-step="plan"]')).toBeVisible();
+    await expectNamedControls(page, 'checkbox');
+    await expect(page.locator('[data-app-step="plan"] [aria-live="polite"]')).toBeVisible();
+    await page.locator('[data-care-option-id="plan-wash-gentle-30"]').press('Enter');
+    await page.getByRole('button', { name: '세탁 단계에 놓기' }).press('Enter');
+    await page.locator('[data-care-option-id="plan-dry-tumble-low"]').press('Enter');
+    await page.getByRole('button', { name: '건조 단계에 놓기' }).press('Enter');
+    await page.locator('[data-care-option-id="plan-iron-none"]').press('Enter');
+    await page.getByRole('button', { name: '다림질 단계에 놓기' }).press('Enter');
+    await page.getByRole('checkbox', { name: /표백 금지 확인/ }).press('Space');
+    await page.getByRole('checkbox', { name: /낮은 열 회전식 건조 확인/ }).press('Space');
+    await page.getByRole('button', { name: '관리 계획 확인' }).press('Enter');
+
+    await expect(page.locator('section.forecast-screen')).toBeVisible();
+    await page.getByRole('checkbox', { name: /줄어듦 가능성 선택/ }).press('Space');
+    await page.getByRole('checkbox', { name: /세탁 제한 표시를 근거로 선택/ }).first().press('Space');
+    await page.getByRole('button', { name: '손상 예보 확인' }).press('Enter');
+    await expect(page.locator('[data-app-step="forecast"] [role="status"][aria-live="polite"]')).toBeVisible();
+    await page.getByRole('button', { name: '가상 결과 보기' }).press('Enter');
+
+    await expect(page.locator('section.virtual-care-screen')).toBeVisible();
+    await page.getByRole('button', { name: '계획 수정하기' }).press('Enter');
+    await expect(page.locator('section.revision-screen')).toBeVisible();
+    await expect(page.locator('[data-app-step="revision"] [role="status"][aria-live="polite"]')).toContainText(/예측|가능성/);
+    await expectNamedControls(page, 'radio');
+    await expectNamedControls(page, 'checkbox');
+    await page.getByRole('radio', { name: /현재 계획의 근거를 다시 확인/ }).press('Space');
+    await page.getByRole('checkbox', { name: /30°C 약한 세탁 표시를 근거로 선택/ }).press('Space');
+    await page.getByRole('button', { name: '수정 계획 확인' }).press('Enter');
+    await expect(page.getByRole('heading', { name: '구조 보고서' })).toBeVisible();
   });
 
   test('names every published symbol with its meaning and current-plan context', async ({ page }) => {
@@ -97,5 +139,17 @@ test.describe('classroom accessibility', () => {
     await expect(required, 'the reduced-motion replacement remains textual').toBeVisible();
     const badgeContent = await required.evaluate((element) => getComputedStyle(element, '::after').content);
     expect(badgeContent).toContain('필수');
+  });
+
+  test('announces evaluation results and exposes named controls', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).press('Enter');
+    await page.getByRole('button', { name: '표시 확대' }).press('Enter');
+    const radioNames = await page.getByRole('radio').evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label') || element.closest('label')?.textContent?.trim() || ''));
+    expect(radioNames.every((name) => name.length > 0)).toBe(true);
+    await page.getByRole('radio').first().press('Space');
+    await page.getByRole('button', { name: '뜻 확인' }).press('Enter');
+    await expect(page.locator('[role="status"][aria-live="polite"]')).toHaveCount(1);
+    await expect(page.locator('[role="status"][aria-live="polite"]')).toContainText(/표시|확인|가능성/);
   });
 });

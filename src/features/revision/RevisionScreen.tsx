@@ -137,7 +137,7 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
       <p className="eyebrow">여섯 번째 단계</p>
       <h2 id="revision-title">관리 계획 수정</h2>
       <p>가상 결과는 가능성을 보여 줘요. 최초 계획과 발견을 근거로 필요한 부분만 다시 계획해요.</p>
-      {predictionFeedback && <p className="revision-feedback">앞에서 확인한 예측: {predictionFeedback.message}</p>}
+      {predictionFeedback && <p className="revision-feedback" role="status" aria-live="polite">앞에서 확인한 예측: {predictionFeedback.message}</p>}
 
       <section className="initial-plan-comparison" aria-label="최초 계획과 비교" role="region">
         <h3>최초 계획과 발견</h3>
