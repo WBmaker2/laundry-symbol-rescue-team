@@ -1557,6 +1557,7 @@ flowchart LR
 - Create: `src/features/simulation/BeforeAfterComparison.tsx`
 - Create: `src/features/simulation/VirtualCareScreen.tsx`
 - Create: `src/features/revision/RevisionScreen.tsx`
+- Create: `src/test/simulation-flow.test.tsx`
 - Modify: `src/features/plan/ManagementBoardScreen.tsx`
 - Modify: `src/app/AppShell.tsx`
 - Modify: `src/test/app-flow.test.tsx`
@@ -1564,7 +1565,7 @@ flowchart LR
 - Modify: `src/styles/motion.css`
 
 **Interfaces:**
-- Consumes: `initialPlan`, `initialEvaluation`, `initialGroupingEvaluation`, `predictionFeedback`, `RevisionEvidence`, `START_REVISION`, `SUBMIT_REVISION`, revised `GroupingEvaluation`.
+- Consumes: `initialPlan`, `initialEvaluation`, `initialGroupingEvaluation`, `prediction`, `predictionFeedback`, `RevisionEvidence`, `START_REVISION`, `SUBMIT_REVISION`, revised `GroupingEvaluation`.
 - Produces: `BeforeAfterComparison`, `VirtualCareScreen`, `RevisionScreen`, `ManagementBoardScreen`의 `mode: 'initial' | 'revision'` prop.
 
 - [ ] **Step 1: 가상 결과와 수정 완료의 실패 테스트를 작성한다**
@@ -1623,7 +1624,7 @@ flowchart LR
 - [ ] **Step 7: 가상 결과·수정 커밋을 만든다**
 
   ```bash
-  git add src/features/simulation/BeforeAfterComparison.tsx src/features/simulation/VirtualCareScreen.tsx src/features/revision/RevisionScreen.tsx src/features/plan/ManagementBoardScreen.tsx src/app/AppShell.tsx src/app/app-shell.css src/styles/motion.css src/test/app-flow.test.tsx
+  git add src/features/simulation/BeforeAfterComparison.tsx src/features/simulation/VirtualCareScreen.tsx src/features/revision/RevisionScreen.tsx src/features/plan/ManagementBoardScreen.tsx src/app/AppShell.tsx src/app/app-shell.css src/styles/motion.css src/test/app-flow.test.tsx src/test/simulation-flow.test.tsx
   git commit -m "feat: add virtual outcome and plan revision"
   ```
 
