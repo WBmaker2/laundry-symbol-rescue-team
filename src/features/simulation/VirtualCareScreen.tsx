@@ -28,10 +28,16 @@ function symbolNames(ids: readonly string[]): string {
 }
 
 function possibilityFor(finding: PlanFinding | undefined, feedback: PredictionFeedback | null): string {
-  const risks = unique([...(finding?.riskIds ?? []), ...(feedback?.supportedRiskIds ?? [])]);
+  if (!finding || finding.status === 'allowed') {
+    return '현재 가상 조건에서는 큰 변화가 두드러지지 않아요. 그래도 실제 라벨을 확인해요.';
+  }
+  const findingRisks = unique(finding.riskIds);
+  const risks = feedback === null
+    ? findingRisks
+    : findingRisks.filter((risk) => feedback.supportedRiskIds.includes(risk));
   return risks.length > 0
     ? `손상 가능성이 커질 수 있어요. ${risks.map((risk) => riskLabels[risk]).join(', ')} 가능성을 살펴봐요.`
-    : '현재 가상 조건에서는 큰 변화가 두드러지지 않아요. 그래도 실제 라벨을 확인해요.';
+    : '선택한 예측과 이 단계의 발견이 직접 연결되지 않았어요. 실제 라벨을 확인해요.';
 }
 
 export interface VirtualCareScreenProps {
