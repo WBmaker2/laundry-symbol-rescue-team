@@ -8,6 +8,7 @@ import { careSymbolById } from '../../content/symbols';
 import { sources } from '../../content/sources';
 import { ManagementCard } from './ManagementCard';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
+import { PROFESSIONAL_HELP_NOTICE } from '../../content/safetyNotices';
 
 const riskLabels: Readonly<Record<DamageRiskId, string>> = {
   shrinkage: '줄어듦', deformation: '변형', 'color-change': '색 변화',
@@ -152,7 +153,7 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
       <section className="report-section responsible-care-evidence" aria-label="responsible-care evidence" role="region">
         <h3>책임 있는 관리와 도움 요청</h3>
         <p>제품 정보를 보호자·교사와 함께 살펴보는 것이 안전한 관리의 출발점이에요.</p>
-        <p>전문 관리가 필요하거나 모르는 표시는 보호자·교사 또는 제품 공식 안내에 확인하기</p>
+        <p>{PROFESSIONAL_HELP_NOTICE}</p>
         <p>이번 보고서의 근거: {summary.responsibleCare ? evidenceNames.join(', ') : '근거를 확인하지 못했어요.'}</p>
       </section>
 

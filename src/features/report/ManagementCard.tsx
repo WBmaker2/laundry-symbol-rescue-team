@@ -5,6 +5,7 @@ import type { PlanEvaluation } from '../../domain/evaluationTypes';
 import { careOptionById } from '../../content/careOptions';
 import { careSymbolById } from '../../content/symbols';
 import { sources } from '../../content/sources';
+import { REAL_LABEL_PRIORITY_NOTICE } from '../../content/safetyNotices';
 import { careOptionTitle } from '../plan/planLabels';
 
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
@@ -72,7 +73,7 @@ export function ManagementCard({ title, mission, plan, evaluation, groupingEvalu
       {groupingEvaluation?.findings.filter(({ code }) => code !== 'compatible-group').map((finding, index) => (
         <p key={`${finding.code}-${index}`} className="management-finding">{finding.feedback}</p>
       ))}
-      {includeLabelNotice && <p>실제 옷에서는 제품 라벨과 제조사 안내, 보호자·교사의 안내를 먼저 확인하세요.</p>}
+      {includeLabelNotice && <p>{REAL_LABEL_PRIORITY_NOTICE}</p>}
       <p className="learning-boundary">학습용 선택 카드이며 실제 옷의 상태나 결과를 보증하지 않아요.</p>
     </article>
   );

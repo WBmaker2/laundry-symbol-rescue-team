@@ -8,6 +8,7 @@ import type {
 import type { CareOption, GarmentMission, StudentPlan, VirtualGarment } from './missionTypes';
 import type { PlanEvaluation, PlanFinding } from './evaluationTypes';
 import { validatePlanInput, type PlanEvaluationInput } from './validatePlanInput';
+import { SAFETY_NOTICES } from '../content/safetyNotices';
 
 const planningStages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
 const stageLabels: Readonly<Record<PlanningStage, string>> = {
@@ -20,13 +21,6 @@ const relativeLevelRank: Readonly<Record<RelativeLevel, number>> = {
   medium: 1,
   higher: 2,
 };
-
-const safetyNotices: readonly string[] = [
-  '실제 옷에서는 제품 라벨과 제조사 안내, 보호자·교사의 안내를 먼저 확인하세요.',
-  '실제 다리미, 뜨거운 물, 표백제, 세탁기는 학생 혼자 조작하지 않아요.',
-  '표시는 국가·시기·제품에 따라 다를 수 있어요. 모르는 표시는 보호자·교사 또는 제품 공식 안내에 확인하세요.',
-  '이 앱은 가상 의류를 위한 학습 도구이며 실제 손상이나 안전을 보증하는 전문 서비스가 아니에요.',
-];
 
 function unique<T>(values: readonly T[]): readonly T[] {
   return [...new Set(values)];
@@ -209,7 +203,7 @@ function invalidEvaluation(message: string): PlanEvaluation {
     combinedAllowedOptions: { wash: [], dry: [], iron: [] },
     waterUse: null,
     energyUse: null,
-    safetyNotices: [...safetyNotices],
+    safetyNotices: [...SAFETY_NOTICES],
   };
 }
 
@@ -312,6 +306,6 @@ export function evaluatePlan(input: PlanEvaluationInput): PlanEvaluation {
     combinedAllowedOptions,
     waterUse: resourceLevel(plan, options, 'waterUse'),
     energyUse: resourceLevel(plan, options, 'energyUse'),
-    safetyNotices: [...safetyNotices],
+    safetyNotices: [...SAFETY_NOTICES],
   };
 }

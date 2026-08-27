@@ -148,6 +148,7 @@ laundry-symbol-rescue-team/
 │   │   ├── careOptions.ts
 │   │   ├── missions.test.ts
 │   │   ├── missions.ts
+│   │   ├── safetyNotices.ts (안전 문구의 단일 canonical 콘텐츠 모듈)
 │   │   ├── sources.ts
 │   │   ├── symbols.test.ts
 │   │   ├── symbols.ts
@@ -1905,14 +1906,17 @@ flowchart LR
 - Create: `src/test/safety-boundaries.test.tsx`
 - Create: `e2e/safety-boundaries.spec.ts`
 - Create: `README.md`
+- Create: `src/content/safetyNotices.ts`
 - Modify: `src/components/ui/SafetyNotice.tsx`
+- Modify: `src/domain/evaluatePlan.ts`
+- Modify: `src/features/report/ManagementCard.tsx`
 - Modify: `src/features/simulation/VirtualCareScreen.tsx`
 - Modify: `src/features/report/RescueReportScreen.tsx`
 - Modify: `index.html`
 
 **Interfaces:**
 - Consumes: 모든 화면 copy, `SafetyNotice`, 정적 SPA 네트워크 경계.
-- Produces: `REAL_LABEL_PRIORITY_NOTICE`, `STUDENT_SAFETY_NOTICE`, `STANDARD_VARIATION_NOTICE`, `SERVICE_LIMIT_NOTICE` 상수와 안전·개인정보 회귀 테스트.
+- Produces: `src/content/safetyNotices.ts`의 `REAL_LABEL_PRIORITY_NOTICE`, `STUDENT_SAFETY_NOTICE`, `STANDARD_VARIATION_NOTICE`, `SERVICE_LIMIT_NOTICE` 네 상수와 `SAFETY_NOTICES` readonly 배열, 전문 도움 문구 상수. 안전 문구를 콘텐츠 계층 한 곳에 두고 판정(`evaluatePlan`)과 표현 계층(`SafetyNotice`, `ManagementCard`)이 함께 소비하게 해 문구 드리프트와 결과별 누락을 막는다. 안전·개인정보 회귀 테스트는 계획·예보·가상 결과·구조 보고서와 전체 흐름의 초기 네트워크 요청을 검증한다.
 
   ```ts
   export const REAL_LABEL_PRIORITY_NOTICE =
@@ -1949,6 +1953,8 @@ flowchart LR
   });
   ```
 
+  `safety-boundaries.test.tsx`는 `evaluatePlan().safetyNotices`가 canonical `SAFETY_NOTICES`와 같은 네 문구인지 고정하고, `plan`·`forecast` 화면의 네 exact notice와 `보호자·교사 또는 제품 공식 안내에 확인하기`를 검증한다. 또한 report DOM과 앱 source에 이름·학급·브랜드 입력 경계가 없는지 확인한다.
+
 - [ ] **Step 2: 안전 경계 테스트를 실행해 누락 문구로 실패하는지 확인한다**
 
   Run: `npm test -- src/test/safety-boundaries.test.tsx`
@@ -1964,13 +1970,15 @@ flowchart LR
   `e2e/safety-boundaries.spec.ts`는 전체 학습 흐름 동안 다음을 확인한다.
 
   ```ts
-  await page.goto('/');
-  const appOrigin = new URL(page.url()).origin;
+  const initialDocumentOrigin = new URL(process.env.BASE_URL ?? 'http://127.0.0.1:4173').origin;
+  let appOrigin = initialDocumentOrigin;
   const forbiddenRequests: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
     if (url.origin !== appOrigin) forbiddenRequests.push(request.url());
   });
+  await page.goto('/');
+  appOrigin = new URL(page.url()).origin;
   await page.reload();
   // 흐름 완료 후
   expect(forbiddenRequests).toEqual([]);
@@ -1999,7 +2007,7 @@ flowchart LR
 - [ ] **Step 7: 안전 경계 커밋을 만든다**
 
   ```bash
-  git add src/test/safety-boundaries.test.tsx e2e/safety-boundaries.spec.ts src/components/ui/SafetyNotice.tsx src/features/simulation/VirtualCareScreen.tsx src/features/report/RescueReportScreen.tsx index.html README.md
+  git add src/test/safety-boundaries.test.tsx e2e/safety-boundaries.spec.ts src/content/safetyNotices.ts src/components/ui/SafetyNotice.tsx src/domain/evaluatePlan.ts src/features/report/ManagementCard.tsx src/features/simulation/VirtualCareScreen.tsx src/features/report/RescueReportScreen.tsx index.html README.md
   git commit -m "feat: enforce safety and privacy boundaries"
   ```
 
