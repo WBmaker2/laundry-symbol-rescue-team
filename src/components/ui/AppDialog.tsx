@@ -7,9 +7,10 @@ export interface AppDialogProps {
   onClose: () => void;
   children: ReactNode;
   triggerRef?: RefObject<HTMLButtonElement | null>;
+  id?: string;
 }
 
-export function AppDialog({ open, title, onClose, children, triggerRef }: AppDialogProps) {
+export function AppDialog({ open, title, onClose, children, triggerRef, id }: AppDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -57,6 +58,7 @@ export function AppDialog({ open, title, onClose, children, triggerRef }: AppDia
     <div className="app-dialog-backdrop" role="presentation">
       <div
         ref={dialogRef}
+        id={id}
         className="app-dialog"
         role="dialog"
         aria-modal="true"
