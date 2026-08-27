@@ -1700,7 +1700,7 @@ flowchart LR
 
 - [ ] **Step 2: 보고서 테스트가 구현 부재로 실패하는지 확인한다**
 
-  Run: `npm test -- src/content/updateHistory.test.ts src/test/app-flow.test.tsx -t "report|업데이트"`
+  Run: `npm test -- src/content/updateHistory.test.ts src/test/app-flow.test.tsx src/test/report-flow.test.tsx -t "report|업데이트"`
 
   Expected: FAIL. 보고서 영역 또는 `updateHistory`를 찾을 수 없다.
 
@@ -1735,7 +1735,7 @@ flowchart LR
 
 - [ ] **Step 5: 보고서·업데이트 테스트를 통과시킨다**
 
-  Run: `npm test -- src/content/updateHistory.test.ts src/test/app-flow.test.tsx`
+  Run: `npm test -- src/content/updateHistory.test.ts src/test/app-flow.test.tsx src/test/report-flow.test.tsx`
 
   Expected: 최초/수정 비교, 네 학습 증거와 책임 있는 관리, 출처·검수일, 상대 지표, 실제 라벨 안내, 업데이트 버튼·초점 복귀 테스트 PASS.
 
