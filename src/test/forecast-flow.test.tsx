@@ -28,4 +28,16 @@ describe('Task 10 예보 접근성·자료 경계', () => {
       if (original) careSymbolById.set('care-no-iron', original);
     }
   });
+
+  it('shows a child-friendly connection sentence and keeps numeric detail secondary', () => {
+    renderAppAtStep({ missionId: 'decorated-top', step: 'forecast', scenario: 'outside-limits' });
+    expect(screen.getByRole('button', { name: '손상 예보 확인' })).not.toHaveClass('required-action');
+    expect(screen.getByRole('button', { name: '가상 결과 보기' })).toHaveClass('required-action');
+    const feedback = document.querySelector('.forecast-feedback [role="status"]');
+    expect(feedback).not.toBeNull();
+    expect(feedback).toHaveTextContent(/표시.*가능성|가능성.*표시/);
+    expect(feedback).not.toHaveTextContent(/\d+\/\d+|\d+개/);
+    expect(screen.getByText('자세한 연결 결과 보기')).toBeInTheDocument();
+    expect(screen.getByText(/연결된 위험/)).toBeInTheDocument();
+  });
 });

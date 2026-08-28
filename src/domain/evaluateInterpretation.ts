@@ -23,6 +23,6 @@ export function evaluateInterpretation({
     explanation: symbol.shortDescription,
     returnPrompt: isCorrect
       ? '이 표시가 관리 행동과 어떻게 이어지는지 확인해 보세요.'
-      : '표시 옆 문자 설명과 허용 조건을 다시 확인하세요.',
+      : '기호 옆 설명에서 온도와 줄 표시를 다시 찾아보세요.',
   };
 }

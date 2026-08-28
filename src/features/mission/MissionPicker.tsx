@@ -6,7 +6,7 @@ export function MissionPicker({ onSelect }: { onSelect: (missionId: MissionId) =
   return (
     <section className="mission-picker" aria-labelledby="mission-picker-title">
       <p className="eyebrow">첫 번째 단계</p>
-      <h2 id="mission-picker-title">구조할 가상 옷을 골라 보세요</h2>
+      <h2 id="mission-picker-title" data-step-heading="true" tabIndex={-1}>구조할 가상 옷을 골라 보세요</h2>
       <p>가상 옷의 재료와 취급 표시를 읽고 관리 순서를 정하는 활동이에요.</p>
       <div className="mission-grid">
         {missions.map((mission) => (

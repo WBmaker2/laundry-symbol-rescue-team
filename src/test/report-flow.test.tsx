@@ -43,6 +43,17 @@ describe('Task 12 구조 보고서와 업데이트 내역', () => {
     expect(button.closest('footer')).toHaveClass('app-footer');
   });
 
+  it('shows five learning achievements, one source disclosure, and a restart action', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({ missionId: 'decorated-top', step: 'report', scenario: 'completed-revision' });
+    expect(screen.getByRole('heading', { name: '구조 미션을 끝냈어요!' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.achievement-checklist li')).toHaveLength(5);
+    expect(screen.getByText('출처와 검수일 보기')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '다른 미션 해보기' }));
+    expect(screen.getByRole('heading', { name: '구조할 가상 옷을 골라 보세요' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '구조할 가상 옷을 골라 보세요' })).toHaveFocus();
+  });
+
   it('does not turn an unsupported selected risk into another predicted risk', () => {
     const state = buildLearnerSessionAtStep({ missionId: 'decorated-top', step: 'report', scenario: 'outside-limits' });
     const initialEvaluation = state.initialEvaluation!;

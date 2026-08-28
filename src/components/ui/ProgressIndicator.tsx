@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { SessionStep } from '../../domain/sessionReducer';
 
 const steps: readonly { id: SessionStep; label: string }[] = [
@@ -11,11 +12,27 @@ const steps: readonly { id: SessionStep; label: string }[] = [
 ];
 
 export function ProgressIndicator({ currentStep }: { currentStep: SessionStep }) {
+  const currentIndex = steps.findIndex((step) => step.id === currentStep);
+  const current = steps[currentIndex] ?? steps[0]!;
+  const currentItemRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    const item = currentItemRef.current;
+    if (item && typeof item.scrollIntoView === 'function') {
+      item.scrollIntoView({ inline: 'center', block: 'nearest' });
+    }
+  }, [currentStep]);
+
   return (
     <nav aria-label="학습 진행 7단계">
-      <ol className="progress-list">
+      <p className="progress-summary" aria-live="polite">현재 단계: {currentIndex + 1}/7 · {current.label}</p>
+      <ol className="progress-list" aria-label="7단계 학습 진행, 가로로 이동할 수 있어요">
         {steps.map((step, index) => (
-          <li key={step.id} className={step.id === currentStep ? 'is-current' : undefined}>
+          <li
+            key={step.id}
+            ref={step.id === currentStep ? currentItemRef : undefined}
+            className={step.id === currentStep ? 'is-current' : undefined}
+          >
             <span aria-current={step.id === currentStep ? 'step' : undefined}>
               <span className="progress-number" aria-hidden="true">{index + 1}</span>
               {step.label}

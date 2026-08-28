@@ -34,8 +34,14 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
     <section className="request-screen" data-mission-id={mission.id} aria-labelledby="request-title">
       <div className="request-heading">
         <p className="eyebrow">{mission.order}번째 구조 요청</p>
-        <h2 id="request-title">{mission.title.split('의 ')[0]} 구조 요청</h2>
+        <h2 id="request-title" data-step-heading="true" tabIndex={-1}>{mission.title.split('의 ')[0]} 구조 요청</h2>
       </div>
+
+      <p className="opening-prompt"><strong>이번 질문:</strong> {mission.openingPrompt}</p>
+      <ActionButton type="button" className="primary-action" emphasis="required" onClick={onOpenMagnifier}>
+        표시 확대
+      </ActionButton>
+      <SafetyNotice variant="compact" />
 
       <div className="garment-list">
         {mission.garments.map((garment) => (
@@ -57,11 +63,6 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
       </div>
 
       <p className="learning-boundary"><strong>학습 범위:</strong> 이 화면의 옷과 재료는 실제 측정값이 아닌 가상 학습 자료예요.</p>
-      <p className="opening-prompt"><strong>이번 질문:</strong> {mission.openingPrompt}</p>
-      <SafetyNotice />
-      <ActionButton type="button" className="primary-action" emphasis="required" onClick={onOpenMagnifier}>
-        표시 확대
-      </ActionButton>
     </section>
   );
 }

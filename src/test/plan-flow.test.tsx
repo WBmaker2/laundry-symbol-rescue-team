@@ -17,11 +17,35 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
   it('카드를 선택한 뒤 단계 버튼으로 배치하고 드래그 없이 현재 계획을 갱신한다', async () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
-    await user.click(screen.getByRole('button', { name: /부드러운 30도 세탁 카드 선택/ }));
-    await user.click(screen.getByRole('button', { name: /세탁 단계에 놓기/ }));
+    await user.click(screen.getByRole('button', { name: /부드러운 30도 세탁 — 세탁 단계 카드 고르기/ }));
+    await user.click(document.querySelector('.stage-place-button') as HTMLElement);
     expect(screen.getByRole('region', { name: '현재 관리 계획' })).toHaveTextContent(/세탁.*부드러운/);
     expect(document.querySelector('[draggable="true"]')).toBeNull();
-    expect(screen.getByRole('button', { name: /세탁 단계에 놓기/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector('.stage-place-button')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('요청 화면은 핵심 버튼을 안전 안내보다 먼저 보여 준다', () => {
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'request' });
+    const root = document.querySelector('.request-screen');
+    const action = root?.querySelector('.primary-action');
+    const safety = root?.querySelector('.safety-notice');
+    expect(action).not.toBeNull();
+    expect(safety).not.toBeNull();
+    expect(action!.compareDocumentPosition(safety!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(safety).toHaveAttribute('data-variant', 'compact');
+  });
+
+  it('선택한 카드 아래에서 알맞은 단계 배치 행동을 바로 실행한다', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
+    expect(document.querySelector('.selection-help')).toHaveTextContent('먼저 관리 방법 카드 하나를 골라 주세요');
+    expect(document.querySelector('.stage-place-button')).toHaveAttribute('aria-describedby', 'wash-stage-help');
+    await user.click(screen.getByRole('button', { name: '부드러운 30도 세탁 — 세탁 단계 카드 고르기' }));
+    const directPlacement = screen.getByRole('button', { name: '선택한 카드 세탁 단계에 놓기' });
+    expect(directPlacement).toBeEnabled();
+    expect(directPlacement).not.toHaveClass('required-action');
+    await user.click(directPlacement);
+    expect(screen.getByRole('region', { name: '현재 관리 계획' })).toHaveTextContent(/세탁.*부드러운/);
   });
 
   it('단계가 비어 있으면 가장 앞선 단계 제목으로 초점을 이동한다', async () => {
@@ -36,12 +60,14 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
     const user = userEvent.setup();
     renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
     for (const [cardName, stageName] of [
-      ['부드러운 30도 세탁 카드 선택', '세탁 단계에 놓기'],
-      ['낮은 열 회전 건조 비교하기 카드 선택', '건조 단계에 놓기'],
-      ['다림질하지 않는 조건 비교하기 카드 선택', '다림질 단계에 놓기'],
+      ['부드러운 30도 세탁 — 세탁 단계 카드 고르기', '세탁 단계에 놓기'],
+      ['낮은 열 회전 건조 비교하기 — 건조 단계 카드 고르기', '건조 단계에 놓기'],
+      ['다림질하지 않는 조건 비교하기 — 다림질 단계 카드 고르기', '다림질 단계에 놓기'],
     ] as const) {
       await user.click(screen.getByRole('button', { name: cardName }));
-      await user.click(screen.getByRole('button', { name: stageName }));
+      const stageButton = [...document.querySelectorAll<HTMLButtonElement>('.stage-place-button')]
+        .find((button) => button.textContent?.trim() === stageName);
+      await user.click(stageButton as HTMLElement);
     }
     for (const checkbox of screen.getAllByRole('checkbox')) await user.click(checkbox);
     await user.click(screen.getByRole('button', { name: '관리 계획 확인' }));
@@ -92,12 +118,14 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
     await user.click(screen.getAllByRole('button', { name: /분리 관리 —/ })[2]!);
     await user.click(screen.getByRole('checkbox', { name: /전문 섬유 관리 확인 표시를 분리 근거로 선택/ }));
     for (const [cardName, stageName] of [
-      ['잠깐 멈추고 도움 요청하기 카드 선택', '세탁 단계에 놓기'],
-      ['잠깐 멈추고 건조 도움 요청하기 카드 선택', '건조 단계에 놓기'],
-      ['다림질 판단을 멈추고 도움 요청하기 카드 선택', '다림질 단계에 놓기'],
+      ['잠깐 멈추고 도움 요청하기 — 세탁 단계 카드 고르기', '세탁 단계에 놓기'],
+      ['잠깐 멈추고 건조 도움 요청하기 — 건조 단계 카드 고르기', '건조 단계에 놓기'],
+      ['다림질 판단을 멈추고 도움 요청하기 — 다림질 단계 카드 고르기', '다림질 단계에 놓기'],
     ] as const) {
       await user.click(screen.getByRole('button', { name: cardName }));
-      await user.click(screen.getByRole('button', { name: stageName }));
+      const stageButton = [...document.querySelectorAll<HTMLButtonElement>('.stage-place-button')]
+        .find((button) => button.textContent?.trim() === stageName);
+      await user.click(stageButton as HTMLElement);
     }
     for (const checkbox of document.querySelectorAll<HTMLInputElement>('[data-restriction-id]')) {
       await user.click(checkbox);

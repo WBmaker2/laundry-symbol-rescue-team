@@ -23,6 +23,11 @@ describe('업데이트 내역', () => {
       category: '접근성',
       summary: '5개 미션 전체 흐름과 Pages 릴리스 자동 게이트 추가',
     });
+    expect(updateHistory).toContainEqual({
+      date: '2026-08-28',
+      category: '접근성',
+      summary: '학습 흐름 포커스·학생용 보고서·반응형 CTA 개선',
+    });
     const keys = updateHistory.map(({ date, category }) => `${date}:${category}`);
     expect(new Set(keys).size).toBe(keys.length);
   });

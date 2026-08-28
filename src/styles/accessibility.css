@@ -10,7 +10,8 @@ button,
 input,
 textarea,
 select {
-  overflow-wrap: anywhere;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
 button {
@@ -34,6 +35,11 @@ summary:focus-visible,
 a:focus-visible {
   outline: 4px solid var(--color-focus);
   outline-offset: 3px;
+}
+
+[data-step-heading='true']:focus {
+  outline: 4px solid var(--color-focus);
+  outline-offset: 5px;
 }
 
 .required-action::after {
@@ -62,6 +68,10 @@ pre {
 }
 
 @media (max-width: 45rem) {
+  .progress-summary {
+    display: block;
+  }
+
   .mission-grid,
   .care-option-grid,
   .risk-card-grid,
@@ -123,6 +133,11 @@ pre {
 .app-shell[data-contrast='high'] .grouping-choice[aria-pressed='true'],
 .app-shell[data-contrast='high'] .risk-card.is-selected {
   border-width: 4px;
+}
+
+.app-shell[data-contrast='high'] .achievement-checklist,
+.app-shell[data-contrast='high'] .report-sources {
+  border-color: var(--color-border);
 }
 
 .app-shell[data-contrast='high'] .care-option-card.is-selected::before,

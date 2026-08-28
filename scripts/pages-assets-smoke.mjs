@@ -19,6 +19,11 @@ for (const reference of references) {
   }
 }
 
+const faviconReference = references.find((reference) => reference === './app-icon.svg');
+if (!faviconReference || !existsSync(join(distDirectory, faviconReference.slice(2)))) {
+  throw new Error('Pages asset smoke: 상대 favicon app-icon.svg가 없습니다.');
+}
+
 const expectedSymbols = [
   'care-wash-30-gentle',
   'care-no-bleach',
@@ -46,4 +51,4 @@ if (!bundledScripts.some((bundle) => /(?:["'`])\.\/(?:["'`])/.test(bundle))) {
   throw new Error('Pages asset smoke: 심볼 URL에 사용할 상대 BASE_URL이 bundle에 없습니다.');
 }
 
-process.stdout.write(`Pages asset smoke passed: ${references.length} relative HTML references, ${expectedSymbols.length} symbol SVGs.\n`);
+process.stdout.write(`Pages asset smoke passed: ${references.length} relative HTML references including favicon, ${expectedSymbols.length} symbol SVGs.\n`);

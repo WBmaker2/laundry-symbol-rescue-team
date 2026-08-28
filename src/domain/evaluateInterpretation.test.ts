@@ -32,6 +32,7 @@ describe('evaluateInterpretation', () => {
 
     expect(result.isCorrect).toBe(false);
     expect(result.returnPrompt).toContain('표시');
+    expect(result.returnPrompt).toContain('온도');
     expect(result.returnPrompt).not.toMatch(/반드시|확실히/);
   });
 

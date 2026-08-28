@@ -67,11 +67,11 @@ async function driveFirstMission(page: Page, stopAt: 'plan' | 'forecast' | 'simu
   }
   if (stopAt === 'plan') return;
   await page.locator('[data-care-option-id="plan-wash-gentle-30"]').press('Enter');
-  await page.getByRole('button', { name: '세탁 단계에 놓기' }).press('Enter');
+  await page.getByRole('button', { name: '선택한 카드 세탁 단계에 놓기' }).press('Enter');
   await page.locator('[data-care-option-id="plan-dry-tumble-low"]').press('Enter');
-  await page.getByRole('button', { name: '건조 단계에 놓기' }).press('Enter');
+  await page.getByRole('button', { name: '선택한 카드 건조 단계에 놓기' }).press('Enter');
   await page.locator('[data-care-option-id="plan-iron-none"]').press('Enter');
-  await page.getByRole('button', { name: '다림질 단계에 놓기' }).press('Enter');
+  await page.getByRole('button', { name: '선택한 카드 다림질 단계에 놓기' }).press('Enter');
   await page.getByRole('checkbox', { name: /표백 금지 확인/ }).press('Space');
   await page.getByRole('checkbox', { name: /낮은 열 회전식 건조 확인/ }).press('Space');
   await page.getByRole('button', { name: '관리 계획 확인' }).press('Enter');
@@ -106,7 +106,29 @@ test.describe('responsive classroom layout', () => {
       await assertNoHorizontalOverflow(page);
       const tracks = await page.locator('.mission-grid').evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
       expect(tracks).toBe(1);
+      await expect(page.getByText('현재 단계: 1/7 · 구조 요청')).toBeVisible();
+      const currentProgress = await page.locator('.progress-list li.is-current').evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      });
+      expect(currentProgress.left).toBeGreaterThanOrEqual(0);
+      expect(currentProgress.right).toBeLessThanOrEqual(width);
       await expect(page.getByRole('button', { name: '업데이트 내역' })).toBeVisible();
+    }
+  });
+
+  test('keeps the request action in the first viewport beside compact safety guidance', async ({ page }) => {
+    for (const [width, height] of [[375, 812], [1280, 800]] as const) {
+      await page.setViewportSize({ width, height });
+      await page.goto('./');
+      await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).click();
+      const actionBounds = await page.getByRole('button', { name: '표시 확대' }).evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, bottom: rect.bottom };
+      });
+      expect(actionBounds.top).toBeGreaterThanOrEqual(0);
+      expect(actionBounds.bottom).toBeLessThanOrEqual(height);
+      await expect(page.locator('.request-screen .safety-notice[data-variant="compact"]')).toBeVisible();
     }
   });
 
@@ -116,6 +138,16 @@ test.describe('responsive classroom layout', () => {
       await page.goto('./');
       await driveFirstMission(page);
       await expect(page.getByRole('heading', { name: '구조 보고서' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: '구조 미션을 끝냈어요!' })).toBeVisible();
+      await expect(page.getByText('출처와 검수일 보기')).toBeVisible();
+      await expect(page.getByRole('button', { name: '다른 미션 해보기' })).toBeVisible();
+      await expect(page.getByText('현재 단계: 7/7 · 구조 보고서')).toBeVisible();
+      const currentProgress = await page.locator('.progress-list li.is-current').evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      });
+      expect(currentProgress.left).toBeGreaterThanOrEqual(0);
+      expect(currentProgress.right).toBeLessThanOrEqual(width);
       await assertNoHorizontalOverflow(page);
       await assertVisibleWithinViewport(page, 'button, fieldset, [role="region"], .report-section');
       const sourceWraps = await page.locator('.source-links a').evaluateAll((elements) => elements.every((element) => getComputedStyle(element).overflowWrap === 'anywhere'));
@@ -141,6 +173,8 @@ test.describe('responsive classroom layout', () => {
     await expect(page.getByRole('button', { name: '업데이트 내역' })).toHaveCSS('min-height', '44px');
     await expect(page.locator('.mission-card').first()).toBeVisible();
     await driveFirstMission(page, 'report', false);
+    await expect(page.getByRole('heading', { name: '구조 미션을 끝냈어요!' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '다른 미션 해보기' })).toBeVisible();
     await assertNoHorizontalOverflow(page);
     await assertVisibleWithinViewport(page, '[data-app-step="report"] button, [data-app-step="report"] [role="region"], .report-section');
     await assertNoOverlappingSiblings(page, '[data-app-step="report"] button, [data-app-step="report"] [role="region"], .report-section');
@@ -205,8 +239,11 @@ test.describe('responsive classroom layout', () => {
     await page.goto('./');
     await driveFirstMission(page, 'simulation');
     await expect(page.locator('.app-shell')).toHaveAttribute('data-contrast', 'normal');
+    await expect(page.locator('[data-comparison-state="allowed"]')).toHaveCount(3);
+    await expect(page.locator('.comparison-state')).toHaveCount(3);
     await expect(page.locator('.static-before-after').first()).toHaveCSS('display', 'grid');
     await expect(page.locator('.animated-garment-state').first()).toHaveCSS('display', 'none');
+    await expect(page.getByRole('button', { name: '계획 수정하기' })).toHaveCSS('animation-name', 'none');
     const comparisonTracks = await page.locator('.comparison-panels').first().evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
     expect(comparisonTracks).toBe(1);
     await page.goto('./');

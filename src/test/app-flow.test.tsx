@@ -78,6 +78,27 @@ describe('Task 7 앱 시작 흐름', () => {
     expect(() => renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan', scenario: 'completed-revision' }))
       .toThrow(/report 단계/);
   });
+  it('각 단계의 다음 행동 하나만 필수 행동으로 강조한다', () => {
+    const magnifier = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'magnifier' });
+    expect(magnifier.container.querySelectorAll('.gi-pulse')).toHaveLength(1);
+    expect(magnifier.container.querySelector('.gi-pulse')).toHaveTextContent('뜻 확인');
+    magnifier.unmount();
+
+    const revision = renderAppAtStep({ missionId: 'decorated-top', step: 'revision', scenario: 'outside-limits' });
+    expect(revision.container.querySelectorAll('.gi-pulse')).toHaveLength(1);
+    expect(revision.container.querySelector('.gi-pulse')).toHaveTextContent('수정 계획 확인');
+    revision.unmount();
+  });
+
+  it('학생 화면에는 위험·표시·수정의 내부 ID를 노출하지 않는다', () => {
+    const revision = renderAppAtStep({ missionId: 'decorated-top', step: 'revision', scenario: 'outside-limits' });
+    const internalIdPattern = /(?:care-(?:wash|no|flat|tumble|iron|professional)|shrinkage|deformation|color-change|heat-damage|decoration-damage|confirm-current-plan)/;
+    expect(revision.container.textContent).not.toMatch(internalIdPattern);
+    revision.unmount();
+    const report = renderAppAtStep({ missionId: 'decorated-top', step: 'report', scenario: 'outside-limits' });
+    expect(report.container.textContent).not.toMatch(internalIdPattern);
+    report.unmount();
+  });
   it.each(missions)('completed-revision evidence is canonical for %s', (mission) => {
     const state = buildLearnerSessionAtStep({
       missionId: mission.id,
@@ -168,7 +189,7 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     expect(screen.getByRole('group', { name: /뜻 후보/ })).toBeInTheDocument();
     const glossary = screen.getByText('용어 도움');
     expect(glossary.tagName).toBe('SUMMARY');
-    for (const term of ['완화 조건', '회전식 건조', '전문 관리', '학습용 재료 모형']) {
+    for (const term of ['옷을 덜 세게 다루는 방법', '통이 빙글빙글 도는 건조', '어른이나 전문가에게 먼저 물어보기', '학습용 재료 모형']) {
       expect(screen.getByText(new RegExp(term))).toBeInTheDocument();
     }
   });
@@ -183,7 +204,7 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     await user.click(wrongRadio);
     expect(wrongRadio).toBeChecked();
     await user.click(screen.getByRole('button', { name: '뜻 확인' }));
-    expect(screen.getByRole('status')).toHaveTextContent(/문자 설명과 허용 조건을 다시 확인/);
+    expect(screen.getByRole('status')).toHaveTextContent(/기호 옆 설명에서 온도와 줄 표시를 다시 찾아보세요/);
     const description = screen.getByTestId('symbol-description');
     expect(description).toHaveAttribute('tabindex', '-1');
     expect(document.activeElement).toBe(description);

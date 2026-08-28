@@ -1,42 +1,32 @@
 import type { ChangeEvent } from 'react';
 import type { DamageRiskId } from '../../domain/careTypes';
+import { learnerRiskCopy } from '../../content/learnerCopy';
 
 interface RiskInfo {
   label: string;
-  possibility: string;
-  description: string;
+  cue: string;
   mark: string;
 }
 
 const riskInfo: Readonly<Record<DamageRiskId, RiskInfo>> = {
   shrinkage: {
-    label: '줄어듦',
-    possibility: '조건에 따라 커질 수 있음',
-    description: '옷의 크기나 길이가 달라질 수 있는지 생각해 봐요.',
+    ...learnerRiskCopy.shrinkage,
     mark: '↕',
   },
   deformation: {
-    label: '변형',
-    possibility: '조건에 따라 커질 수 있음',
-    description: '옷의 모양이 달라질 수 있는지 살펴봐요.',
+    ...learnerRiskCopy.deformation,
     mark: '◇',
   },
   'color-change': {
-    label: '색 변화',
-    possibility: '조건에 따라 커질 수 있음',
-    description: '색이 달라질 수 있는 조건인지 확인해 봐요.',
+    ...learnerRiskCopy['color-change'],
     mark: '●',
   },
   'decoration-damage': {
-    label: '장식 손상',
-    possibility: '조건에 따라 커질 수 있음',
-    description: '붙은 장식이 영향을 받을 수 있는지 생각해 봐요.',
+    ...learnerRiskCopy['decoration-damage'],
     mark: '✦',
   },
   'heat-damage': {
-    label: '열 손상',
-    possibility: '조건에 따라 커질 수 있음',
-    description: '열이 재료에 영향을 줄 수 있는 조건인지 확인해 봐요.',
+    ...learnerRiskCopy['heat-damage'],
     mark: '☼',
   },
 };
@@ -61,8 +51,8 @@ export function RiskCard({ riskId, selected, onToggle }: RiskCardProps) {
       <div className="risk-mark" data-risk-illustration={riskId} aria-hidden="true">{info.mark}</div>
       <div className="risk-card-copy">
         <h3 id={titleId}>{info.label} 가능성</h3>
-        <p className="risk-possibility">상대 가능성: {info.possibility}</p>
-        <p id={descriptionId}>{info.description}</p>
+        <p className="risk-possibility"><strong>살펴볼 점</strong>: {info.cue}</p>
+        <p id={descriptionId}>이 변화가 생길 수 있는 조건을 표시와 비교해 봐요.</p>
       </div>
       <label className="risk-choice">
         <input

@@ -159,6 +159,11 @@
 .forecast-message,
 .forecast-feedback { padding: 0.8rem; border-left: 4px solid var(--color-accent); background: rgb(231 120 85 / 10%); }
 .forecast-feedback { display: grid; gap: 0.65rem; }
+.forecast-feedback [role='status'] { display: grid; gap: 0.4rem; }
+.forecast-detail { padding: 0.65rem 0.8rem; border: 1px solid rgb(36 49 58 / 22%); border-radius: 0.65rem; background: var(--color-card); }
+.forecast-detail summary { min-height: 44px; padding-block: 0.45rem; cursor: pointer; font-weight: 800; }
+.forecast-detail ul { margin: 0.6rem 0 0; padding-left: 1.2rem; }
+.forecast-detail li + li { margin-top: 0.35rem; }
 .evidence-review { display: grid; gap: 0.55rem; }
 .evidence-review-button,
 .dialog-close-button,
@@ -210,6 +215,10 @@
 .comparison-label { font-weight: 800; }
 .comparison-illustration { display: grid; min-height: 3.5rem; place-items: center; background: #f8d9bd; border-radius: 0.5rem; }
 .comparison-garment { font-weight: 800; }
+.comparison-state { display: flex; gap: 0.45rem; align-items: flex-start; margin: 0; padding: 0.55rem 0.7rem; border-radius: 0.55rem; background: rgb(231 120 85 / 10%); }
+.comparison-state-caution { border-left: 4px solid var(--color-accent); }
+.comparison-state-allowed { border-left: 4px solid var(--color-accent-dark); }
+.comparison-state-marker { display: inline-grid; width: 1.4rem; height: 1.4rem; flex: 0 0 auto; place-items: center; border: 2px solid currentColor; border-radius: 50%; font-weight: 900; }
 .before-after-comparison .comparison-possibility { margin-top: 0.75rem; }
 .revision-screen > .management-board { box-shadow: none; }
 .revision-reasons label,
@@ -265,6 +274,30 @@
 
 .source-links a { color: var(--color-accent-dark); font-weight: 700; }
 .responsible-care-evidence { border-color: var(--color-accent-dark); }
+
+.achievement-checklist {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 2px solid var(--color-accent-dark);
+  border-radius: 0.9rem;
+  background: rgb(231 120 85 / 8%);
+}
+
+.achievement-checklist h3,
+.achievement-checklist p { margin: 0; }
+.achievement-list { display: grid; gap: 0.45rem; margin: 0.35rem 0 0; padding: 0; list-style: none; }
+.achievement-item { display: grid; grid-template-columns: auto 1fr auto; gap: 0.6rem; align-items: center; min-height: 2.75rem; padding: 0.45rem 0.6rem; border-radius: 0.55rem; background: var(--color-card); }
+.achievement-item[data-complete='true'] { border-left: 0.3rem solid var(--color-accent-dark); }
+.achievement-item[data-complete='false'] { border-left: 0.3rem solid rgb(36 49 58 / 28%); color: var(--color-muted); }
+.achievement-mark { display: inline-grid; width: 1.5rem; height: 1.5rem; place-items: center; border: 2px solid currentColor; border-radius: 50%; font-weight: 900; }
+.achievement-label { font-weight: 700; }
+.achievement-state { font-size: 0.85rem; font-weight: 800; color: var(--color-accent-dark); }
+.achievement-item[data-complete='false'] .achievement-state { color: var(--color-muted); }
+.report-sources { display: grid; gap: 0.55rem; padding: 0.7rem 0.8rem; border: 1px solid rgb(36 49 58 / 22%); border-radius: 0.65rem; background: var(--color-card); }
+.report-sources summary { min-height: 44px; padding-block: 0.45rem; cursor: pointer; font-weight: 800; }
+.report-sources p { margin: 0; }
+.report-restart-action { width: fit-content; margin-top: 0.1rem; }
 
 .management-card {
   display: grid;

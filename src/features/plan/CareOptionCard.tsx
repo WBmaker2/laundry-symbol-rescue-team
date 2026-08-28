@@ -5,11 +5,12 @@ import { careOptionTitle } from './planLabels';
 
 export interface CareOptionCardProps {
   option: CareOption;
+  stageLabel: string;
   selected: boolean;
   onSelect: (optionId: CareOptionId) => void;
 }
 
-export function CareOptionCard({ option, selected, onSelect }: CareOptionCardProps) {
+export function CareOptionCard({ option, stageLabel, selected, onSelect }: CareOptionCardProps) {
   const title = careOptionTitle(option);
   return (
     <article className={`care-option-card${selected ? ' is-selected' : ''}`}>
@@ -23,10 +24,10 @@ export function CareOptionCard({ option, selected, onSelect }: CareOptionCardPro
         className="care-option-select"
         data-care-option-id={option.id}
         aria-pressed={selected}
-        aria-label={`${title} 카드 선택`}
+        aria-label={`${title} — ${stageLabel} 단계 카드 고르기`}
         onClick={() => onSelect(option.id)}
       >
-        {selected ? '선택한 카드' : '카드 선택'}
+        이 카드 고르기
       </ActionButton>
     </article>
   );

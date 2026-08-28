@@ -14,7 +14,7 @@ const stageLabels: Readonly<Record<PlanningStage, string>> = { wash: '세탁', d
 function unique<T>(values: readonly T[]): readonly T[] { return [...new Set(values)]; }
 
 function symbolNames(ids: readonly CareSymbolId[]): string {
-  return unique(ids).map((id) => careSymbolById.get(id)?.name ?? id).join(', ') || '관련 표시 없음';
+  return unique(ids).map((id) => careSymbolById.get(id)?.name ?? '관련 표시').join(', ') || '관련 표시 없음';
 }
 
 function sourceLinks(ids: readonly CareSymbolId[]) {
@@ -37,9 +37,10 @@ export interface ManagementCardProps {
   groupingEvaluation: GroupingEvaluation | null;
   changedStages?: readonly PlanningStage[];
   includeLabelNotice?: boolean;
+  showSources?: boolean;
 }
 
-export function ManagementCard({ title, mission, plan, evaluation, groupingEvaluation, changedStages = [], includeLabelNotice = true }: ManagementCardProps) {
+export function ManagementCard({ title, mission, plan, evaluation, groupingEvaluation, changedStages = [], includeLabelNotice = true, showSources = true }: ManagementCardProps) {
   const symbolIds = unique(mission.garments.flatMap(({ symbolIds: ids }) => ids));
   return (
     <article className="management-card">
@@ -58,13 +59,13 @@ export function ManagementCard({ title, mission, plan, evaluation, groupingEvalu
       <p><strong>평가</strong>: {evaluation.status === 'ready' ? '허용 범위' : '다시 살펴볼 부분이 있어요.'}</p>
       {mission.requiresGrouping && plan.grouping && (
         <div className="management-grouping">
-          <p><strong>함께</strong>: {plan.grouping.togetherGarmentIds.map((id) => mission.garments.find((garment) => garment.id === id)?.name ?? id).join(', ') || '없음'}</p>
-          <p><strong>따로</strong>: {plan.grouping.separateGarmentIds.map((id) => mission.garments.find((garment) => garment.id === id)?.name ?? id).join(', ') || '없음'}</p>
+          <p><strong>함께</strong>: {plan.grouping.togetherGarmentIds.map((id) => mission.garments.find((garment) => garment.id === id)?.name ?? '확인할 옷').join(', ') || '없음'}</p>
+          <p><strong>따로</strong>: {plan.grouping.separateGarmentIds.map((id) => mission.garments.find((garment) => garment.id === id)?.name ?? '확인할 옷').join(', ') || '없음'}</p>
           <p><strong>옷 묶음 평가</strong>: {groupingEvaluation?.status === 'ready' ? '허용 범위' : '근거를 다시 확인해요.'}</p>
         </div>
       )}
       <p><strong>관련 표시</strong>: {symbolNames(symbolIds)}</p>
-      <p className="source-links"><strong>출처·검수일</strong>: {sourceLinks(symbolIds)}</p>
+      {showSources && <p className="source-links"><strong>출처·검수일</strong>: {sourceLinks(symbolIds)}</p>}
       {evaluation.findings.some(({ status }) => status !== 'allowed') && (
         <ul className="management-findings" aria-label="계획 평가 근거">
           {evaluation.findings.filter(({ status }) => status !== 'allowed').map((finding, index) => <li key={`${finding.stage}-${index}`}>{finding.feedback}</li>)}

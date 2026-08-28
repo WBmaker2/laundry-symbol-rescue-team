@@ -134,7 +134,13 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
   return (
     <section className="management-board" data-mission-id={mission.id} aria-labelledby="management-board-title">
       <p className="eyebrow">{mode === 'revision' ? '여섯 번째 단계' : '세 번째 단계'}</p>
-      <h2 id="management-board-title">{mode === 'revision' ? '새 수정 계획 만들기' : '관리 순서판'}</h2>
+      <h2
+        id="management-board-title"
+        data-step-heading={mode === 'initial' ? 'true' : undefined}
+        tabIndex={mode === 'initial' ? -1 : undefined}
+      >
+        {mode === 'revision' ? '새 수정 계획 만들기' : '관리 순서판'}
+      </h2>
       <p>{mode === 'revision' ? '최초 계획을 살펴본 뒤, 바꿀 카드만 다시 골라 단계에 놓아요.' : '관리 방법 카드를 먼저 고르고, 카드를 놓을 단계를 버튼으로 선택해요.'}</p>
       <p className="learning-boundary">카드의 조건은 가상 재료 모형을 비교하는 학습 자료예요. 실제 옷은 제품 라벨과 보호자·교사 안내를 먼저 확인해요.</p>
 
@@ -160,10 +166,16 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
               className="stage-place-button"
               aria-pressed={stageOptions[stage] !== null}
               disabled={!selectedOption || selectedOption.stage !== stage}
+              aria-describedby={!selectedOption || selectedOption.stage !== stage ? `${stage}-stage-help` : undefined}
               onClick={() => placeOption(stage)}
             >
               {stageLabels[stage]} 단계에 놓기
             </ActionButton>
+            {(!selectedOption || selectedOption.stage !== stage) && (
+              <p id={`${stage}-stage-help`} className="plan-stage-help">
+                {!selectedOption ? '카드를 먼저 고르면 이 단계에 놓을 수 있어요.' : `지금 고른 카드는 ${stageLabels[selectedOption.stage]} 단계에 놓을 수 있어요.`}
+              </p>
+            )}
           </section>
         ))}
       </div>
@@ -175,11 +187,26 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
             <CareOptionCard
               key={option.id}
               option={option}
+              stageLabel={stageLabels[option.stage]}
               selected={selectedOptionId === option.id}
               onSelect={chooseOption}
             />
           ))}
         </div>
+        {selectedOption ? (
+          <div className="selected-option-action" aria-label="선택 카드 배치">
+            <p><strong>{careOptionById.get(selectedOption.id)?.label ?? selectedOption.id}</strong> 카드를 골랐어요. 이제 {stageLabels[selectedOption.stage]} 단계에 놓아 보세요.</p>
+            <ActionButton
+              type="button"
+              className="selected-option-place-button"
+              onClick={() => placeOption(selectedOption.stage)}
+            >
+              선택한 카드 {stageLabels[selectedOption.stage]} 단계에 놓기
+            </ActionButton>
+          </div>
+        ) : (
+          <p className="selection-help" role="status" aria-live="polite">먼저 관리 방법 카드 하나를 골라 주세요.</p>
+        )}
       </section>
 
       {restrictions.length > 0 && (
@@ -258,7 +285,7 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
 
       {message && <p className="plan-message" role="status" aria-live="polite">{message}</p>}
       <SafetyNotice />
-      <ActionButton type="button" className="primary-action" emphasis={mode === 'initial' ? 'required' : 'normal'} onClick={submit}>
+      <ActionButton type="button" className="primary-action" emphasis="required" onClick={submit}>
         {mode === 'revision' ? '수정 계획 확인' : '관리 계획 확인'}
       </ActionButton>
     </section>

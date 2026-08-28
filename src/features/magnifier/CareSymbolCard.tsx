@@ -4,6 +4,7 @@ import { evaluateInterpretation } from '../../domain/evaluateInterpretation';
 import type { InterpretationFeedback } from '../../domain/evaluationTypes';
 import type { SymbolInterpretationAttempt } from '../../domain/sessionReducer';
 import { SymbolFigure } from '../../components/ui/SymbolFigure';
+import { ActionButton } from '../../components/ui/ActionButton';
 
 export interface CareSymbolCardProps {
   symbol: CareSymbol;
@@ -72,7 +73,7 @@ export function CareSymbolCard({ symbol, attempt, onChoose }: CareSymbolCardProp
           </label>
         ))}
       </fieldset>
-      <button type="button" className="primary-action" onClick={submitChoice}>뜻 확인</button>
+      <ActionButton type="button" className="primary-action" emphasis="required" onClick={submitChoice}>뜻 확인</ActionButton>
       {(selectionMessage || feedback) && (
         <p className="interpretation-feedback" role="status" aria-live="polite">
           {selectionMessage ?? (feedback?.isCorrect ? `맞아요. ${feedback.explanation}` : feedback?.returnPrompt)}

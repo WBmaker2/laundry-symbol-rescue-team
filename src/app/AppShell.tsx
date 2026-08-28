@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MissionPicker } from '../features/mission/MissionPicker';
 import { RescueRequestScreen } from '../features/mission/RescueRequestScreen';
 import { HighContrastToggle } from '../components/ui/HighContrastToggle';
@@ -124,6 +124,7 @@ function StepContent({ step }: { step: SessionStep }) {
           revisedEvaluation={state.revisedEvaluation}
           revisedGroupingEvaluation={state.revisedGroupingEvaluation}
           revisionEvidence={state.revisionEvidence}
+          onRestartMission={() => dispatch({ type: 'RESTART_MISSION' })}
         />
       );
     }
@@ -139,7 +140,23 @@ export function AppShell() {
   const [highContrast, setHighContrast] = useState(false);
   const [updateHistoryOpen, setUpdateHistoryOpen] = useState(false);
   const updateHistoryButtonRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const previousViewKeyRef = useRef<string | null>(null);
   const mission = state.missionId === null ? null : missionById.get(state.missionId);
+  const viewKey = `${state.step}:${state.missionId ?? 'none'}`;
+
+  useEffect(() => {
+    if (previousViewKeyRef.current === null) {
+      previousViewKeyRef.current = viewKey;
+      return;
+    }
+    if (previousViewKeyRef.current === viewKey) return;
+    previousViewKeyRef.current = viewKey;
+
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    const heading = mainRef.current?.querySelector<HTMLElement>('[data-step-heading="true"]');
+    heading?.focus({ preventScroll: true });
+  }, [viewKey]);
 
   return (
     <div
@@ -155,7 +172,7 @@ export function AppShell() {
         <HighContrastToggle enabled={highContrast} onToggle={() => setHighContrast((value) => !value)} />
         <ProgressIndicator currentStep={state.step} />
       </header>
-      <main className="app-main" data-app-step={state.step}>
+      <main ref={mainRef} className="app-main" data-app-step={state.step}>
         <StepContent step={state.step} />
       </main>
       <footer className="app-footer">

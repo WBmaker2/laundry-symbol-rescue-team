@@ -7,6 +7,8 @@ import type { LearnerSession, RevisionEvidence, RevisionReasonId } from '../../d
 import { careSymbolById } from '../../content/symbols';
 import { sources } from '../../content/sources';
 import { ManagementCard } from './ManagementCard';
+import { AchievementChecklist } from './AchievementChecklist';
+import { ActionButton } from '../../components/ui/ActionButton';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { PROFESSIONAL_HELP_NOTICE } from '../../content/safetyNotices';
 
@@ -59,8 +61,20 @@ function changedStages(initialPlan: StudentPlan, revisedPlan: StudentPlan): read
   return (['wash', 'dry', 'iron'] as const).filter((stage) => initialPlan.stageOptions[stage] !== revisedPlan.stageOptions[stage]);
 }
 
-function names<T extends string>(ids: readonly T[], labels: Readonly<Record<T, string>>): string {
-  return ids.map((id) => labels[id]).join(', ') || '없음';
+const stageLabels: Readonly<Record<PlanningStage, string>> = {
+  wash: '세탁', dry: '건조', iron: '다림질',
+};
+
+function riskNames(ids: readonly DamageRiskId[]): string {
+  return ids.map((id) => riskLabels[id]).join(', ') || '없음';
+}
+
+function symbolNames(ids: readonly CareSymbolId[]): string {
+  return ids.map((id) => careSymbolById.get(id)?.name ?? '관련 표시').join(', ') || '없음';
+}
+
+function stageNames(stages: readonly PlanningStage[]): string {
+  return stages.map((stage) => stageLabels[stage]).join(', ') || '바뀐 단계 없음';
 }
 
 export interface RescueReportScreenProps {
@@ -75,10 +89,11 @@ export interface RescueReportScreenProps {
   revisedEvaluation: PlanEvaluation;
   revisedGroupingEvaluation: GroupingEvaluation | null;
   revisionEvidence: RevisionEvidence;
+  onRestartMission: () => void;
 }
 
 export function RescueReportScreen(props: RescueReportScreenProps) {
-  const { mission, initialPlan, initialEvaluation, initialGroupingEvaluation, prediction, predictionFeedback, revisedPlan, revisedEvaluation, revisedGroupingEvaluation, revisionEvidence } = props;
+  const { mission, initialPlan, initialEvaluation, initialGroupingEvaluation, prediction, predictionFeedback, revisedPlan, revisedEvaluation, revisedGroupingEvaluation, revisionEvidence, onRestartMission } = props;
   const symbolIds = unique(mission.garments.flatMap(({ symbolIds: ids }) => ids));
   const summary = achievementSummary({ missionId: mission.id, interpretations: props.interpretations, initialEvaluation, initialGroupingEvaluation, predictionFeedback, revisedEvaluation, revisedGroupingEvaluation, revisionEvidence }, mission);
   const changed = changedStages(initialPlan, revisedPlan);
@@ -90,11 +105,12 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
   const supportedReasons = predictionFeedback?.supportedReasonSymbolIds ?? [];
   const unsupportedReasons = predictionFeedback?.unsupportedReasonSymbolIds ?? [];
   const missedReasons = predictionFeedback?.missedReasonSymbolIds ?? [];
-  const evidenceNames = revisionEvidence.relatedSymbolIds.map((id) => careSymbolById.get(id)?.name ?? id);
+  const evidenceNames = revisionEvidence.relatedSymbolIds.map((id) => careSymbolById.get(id)?.name ?? '관련 표시');
   return (
     <section className="rescue-report-screen" data-app-step="report" aria-labelledby="rescue-report-title">
       <p className="eyebrow">일곱 번째 단계</p>
-      <h2 id="rescue-report-title">구조 보고서</h2>
+      <h2 id="rescue-report-title" data-step-heading="true" tabIndex={-1}>구조 보고서</h2>
+      <AchievementChecklist summary={summary} />
 
       <section className="report-section" aria-labelledby="mission-boundary-title">
         <h3 id="mission-boundary-title">미션·가상 재료와 학습 경계</h3>
@@ -110,37 +126,42 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
           const symbol = careSymbolById.get(id);
           if (!symbol) return null;
           const displayKind = (symbol.displayKind as string) === 'official-standard-symbol' ? '공식 표준 표시' : '학습용 아이콘';
-          return <li key={id}><strong>{symbol.name}</strong> · {displayKind} · {symbol.shortDescription}<span className="source-links">{sourceLinks([id])}</span><span>해석: {props.interpretations.find((attempt) => attempt.symbolId === id && attempt.isCorrect) ? '맞게 확인했어요.' : '다시 살펴봐요.'}</span></li>;
+          return <li key={id}><strong>{symbol.name}</strong> · {displayKind} · {symbol.shortDescription}<span>해석: {props.interpretations.find((attempt) => attempt.symbolId === id && attempt.isCorrect) ? '맞게 확인했어요.' : '다시 살펴봐요.'}</span></li>;
         })}</ul>
-        <p>학습용 아이콘은 실제 제품 라벨 표시를 대신하지 않아요. 출처와 검수일 링크를 확인해요.</p>
+        <p>학습용 아이콘은 실제 제품 라벨 표시를 대신하지 않아요. 출처와 검수일은 한곳에서 확인해요.</p>
+        <details className="report-sources">
+          <summary>출처와 검수일 보기</summary>
+          <p>표시를 확인하는 데 참고한 공식 자료예요.</p>
+          <div className="source-links">{sourceLinks(symbolIds)}</div>
+        </details>
       </section>
 
       <section className="report-section" aria-label="최초 계획" role="region">
         <h3>최초 계획</h3>
-        <ManagementCard title="최초 세탁·건조·다림질 계획" mission={mission} plan={initialPlan} evaluation={initialEvaluation} groupingEvaluation={initialGroupingEvaluation} includeLabelNotice={false} />
+        <ManagementCard title="최초 세탁·건조·다림질 계획" mission={mission} plan={initialPlan} evaluation={initialEvaluation} groupingEvaluation={initialGroupingEvaluation} includeLabelNotice={false} showSources={false} />
       </section>
 
       <section className="report-section" aria-labelledby="risk-title" aria-label="예측한 손상 가능성과 관련 표시" role="region">
         <h3 id="risk-title">예측한 손상 가능성과 관련 표시</h3>
         <p>{prediction ? '학생이 고른 위험·근거 표시와 평가 결과를 구분해 살펴봐요.' : '예측 선택 자료가 없어요.'}</p>
         <ul>
-          <li><strong>학생이 선택한 위험</strong>: {names(selectedRisks, riskLabels)}</li>
-          <li><strong>예측한 가능성(평가가 연결된 위험)</strong>: {supportedRisks.length > 0 ? names(supportedRisks, riskLabels) : '연결된 위험 없음 · 근거 부족'}</li>
-          <li><strong>선택했지만 초기 평가 근거가 없는 위험</strong>: {names(unsupportedRisks, riskLabels)}</li>
-          <li><strong>평가에서 놓친 위험</strong>: {names(missedRisks, riskLabels)}</li>
-          <li><strong>학생이 선택한 근거 표시</strong>: {names(selectedReasons, Object.fromEntries(selectedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
-          <li><strong>평가가 연결한 근거 표시</strong>: {names(supportedReasons, Object.fromEntries(supportedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
-          <li><strong>선택했지만 초기 평가 근거가 없는 표시</strong>: {names(unsupportedReasons, Object.fromEntries(unsupportedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
-          <li><strong>평가에서 놓친 표시</strong>: {names(missedReasons, Object.fromEntries(missedReasons.map((id) => [id, careSymbolById.get(id)?.name ?? id])) as Readonly<Record<CareSymbolId, string>>)}</li>
+          <li><strong>학생이 선택한 위험</strong>: {riskNames(selectedRisks)}</li>
+          <li><strong>예측한 가능성(평가가 연결된 위험)</strong>: {supportedRisks.length > 0 ? riskNames(supportedRisks) : '연결된 위험 없음 · 근거 부족'}</li>
+          <li><strong>선택했지만 초기 평가 근거가 없는 위험</strong>: {riskNames(unsupportedRisks)}</li>
+          <li><strong>평가에서 놓친 위험</strong>: {riskNames(missedRisks)}</li>
+          <li><strong>학생이 선택한 근거 표시</strong>: {symbolNames(selectedReasons)}</li>
+          <li><strong>평가가 연결한 근거 표시</strong>: {symbolNames(supportedReasons)}</li>
+          <li><strong>선택했지만 초기 평가 근거가 없는 표시</strong>: {symbolNames(unsupportedReasons)}</li>
+          <li><strong>평가에서 놓친 표시</strong>: {symbolNames(missedReasons)}</li>
         </ul>
         <p>{predictionFeedback?.message ?? '실제 옷의 상태를 예측하는 결과가 아니에요.'}</p>
       </section>
 
       <section className="report-section" aria-label="수정 계획" role="region">
         <h3>수정 계획</h3>
-        <ManagementCard title="수정한 세탁·건조·다림질 계획" mission={mission} plan={revisedPlan} evaluation={revisedEvaluation} groupingEvaluation={revisedGroupingEvaluation} changedStages={changed} includeLabelNotice={false} />
-        <p><strong>수정 이유</strong>: {reasonLabels[revisionEvidence.reasonId]} (<code>{revisionEvidence.reasonId}</code>)</p>
-        <p><strong>바뀐 단계</strong>: {changed.length > 0 ? changed.join(', ') : '바뀐 단계 없음'}</p>
+        <ManagementCard title="수정한 세탁·건조·다림질 계획" mission={mission} plan={revisedPlan} evaluation={revisedEvaluation} groupingEvaluation={revisedGroupingEvaluation} changedStages={changed} includeLabelNotice={false} showSources={false} />
+        <p><strong>수정 이유</strong>: {reasonLabels[revisionEvidence.reasonId]}</p>
+        <p><strong>바뀐 단계</strong>: {stageNames(changed)}</p>
         <p><strong>근거 표시</strong>: {evidenceNames.join(', ')}</p>
       </section>
 
@@ -158,6 +179,7 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
       </section>
 
       <SafetyNotice />
+      <ActionButton type="button" className="primary-action report-restart-action" emphasis="required" onClick={onRestartMission}>다른 미션 해보기</ActionButton>
     </section>
   );
 }

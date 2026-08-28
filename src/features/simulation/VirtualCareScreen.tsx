@@ -7,6 +7,7 @@ import { careSymbolById } from '../../content/symbols';
 import { careOptionTitle } from '../plan/planLabels';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { BeforeAfterComparison } from './BeforeAfterComparison';
+import { ActionButton } from '../../components/ui/ActionButton';
 
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
 const stageLabels: Readonly<Record<PlanningStage, string>> = { wash: '세탁', dry: '건조', iron: '다림질' };
@@ -52,7 +53,7 @@ export function VirtualCareScreen({ mission, plan, evaluation, predictionFeedbac
   return (
     <section className="virtual-care-screen" data-app-step="simulation" aria-labelledby="virtual-care-title" aria-describedby="virtual-care-boundary">
       <p className="eyebrow">다섯 번째 단계</p>
-      <h2 id="virtual-care-title">가상 결과 확인</h2>
+      <h2 id="virtual-care-title" data-step-heading="true" tabIndex={-1}>가상 결과 확인</h2>
       <p><strong>현재 미션</strong>: {mission.title}</p>
       <p>처음 세운 계획을 가상 재료 모형에 적용해 보고, 단계별 변화 가능성을 살펴봐요.</p>
       <p className="learning-boundary">결과는 가능성을 비교하는 학습 자료이며 실제 옷의 상태를 판정하지 않아요.</p>
@@ -78,6 +79,7 @@ export function VirtualCareScreen({ mission, plan, evaluation, predictionFeedbac
                 </p>
                 <BeforeAfterComparison
                   stageLabel={stageLabels[stage]}
+                  comparisonState={isOutside ? 'caution' : 'allowed'}
                   before="가상 옷의 처음 모습"
                   after={isOutside ? '조건 차이로 달라질 수 있는 모습' : '가상 옷의 모습을 그대로 비교하는 장면'}
                   possibility={isOutside ? '조건 차이에 따라 달라질 수 있어요.' : '실제 상태를 단정하지 않는 비교예요.'}
@@ -97,7 +99,7 @@ export function VirtualCareScreen({ mission, plan, evaluation, predictionFeedbac
 
       <p id="virtual-care-boundary" className="learning-boundary">이 학습용 결과가 실제 옷의 상태를 보증하지 않아요.</p>
       <SafetyNotice />
-      <button type="button" className="simulation-action" onClick={onStartRevision}>계획 수정하기</button>
+      <ActionButton type="button" className="simulation-action" emphasis="required" onClick={onStartRevision}>계획 수정하기</ActionButton>
     </section>
   );
 }

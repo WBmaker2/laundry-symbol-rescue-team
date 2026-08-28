@@ -10,6 +10,8 @@ import { validateMissionCatalog } from '../../content/validateMissionCatalog';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { SymbolFigure } from '../../components/ui/SymbolFigure';
 import { RiskCard } from './RiskCard';
+import { learnerPredictionMessage, learnerRiskCopy } from '../../content/learnerCopy';
+import { ActionButton } from '../../components/ui/ActionButton';
 
 const riskIds: readonly DamageRiskId[] = [
   'shrinkage', 'deformation', 'color-change', 'decoration-damage', 'heat-damage',
@@ -33,7 +35,7 @@ function missionSymbols(mission: GarmentMission): readonly CareSymbol[] | null {
 function CatalogError() {
   return (
     <section className="magnifier-error" role="alert" aria-labelledby="forecast-error-title">
-      <h2 id="forecast-error-title">표시 자료를 불러올 수 없어요</h2>
+      <h2 id="forecast-error-title" data-step-heading="true" tabIndex={-1}>표시 자료를 불러올 수 없어요</h2>
       <p>이 미션의 표시 자료가 완전하지 않아 손상 예보를 안전하게 시작할 수 없어요.</p>
       <p>표시를 건너뛰지 않고, 보호자·교사에게 자료를 확인해 달라고 요청해 주세요.</p>
     </section>
@@ -48,11 +50,16 @@ function evidenceLabel(symbol: CareSymbol): string {
   return '관리 제한 표시';
 }
 
-function feedbackSummary(feedback: PredictionFeedback): string {
-  const supported = feedback.supportedRiskIds.length;
-  const selected = feedback.supportedRiskIds.length + feedback.unsupportedRiskIds.length;
-  const evidence = feedback.supportedReasonSymbolIds.length;
-  return `연결된 손상 가능성 ${supported}/${selected}, 연결된 표시 근거 ${evidence}개. ${feedback.message}`;
+function feedbackDetailLines(feedback: PredictionFeedback, symbols: readonly CareSymbol[]): readonly string[] {
+  const riskNames = (ids: readonly DamageRiskId[]) => ids.map((riskId) => learnerRiskCopy[riskId].label).join(', ') || '없음';
+  const symbolNames = (ids: readonly CareSymbolId[]) => ids.map((symbolId) => symbols.find((symbol) => symbol.id === symbolId)?.name ?? '표시').join(', ') || '없음';
+  return [
+    `연결된 위험: ${riskNames(feedback.supportedRiskIds)} (${feedback.supportedRiskIds.length}개)`,
+    `연결되지 않은 위험: ${riskNames(feedback.unsupportedRiskIds)}`,
+    `놓친 위험: ${riskNames(feedback.missedRiskIds)}`,
+    `연결된 근거 표시: ${symbolNames(feedback.supportedReasonSymbolIds)} (${feedback.supportedReasonSymbolIds.length}개)`,
+    `연결되지 않은 근거 표시: ${symbolNames(feedback.unsupportedReasonSymbolIds)}`,
+  ];
 }
 
 export interface DamageForecastScreenProps {
@@ -147,7 +154,7 @@ export function DamageForecastScreen({
   return (
     <section className="forecast-screen" data-app-step="forecast" aria-labelledby="forecast-title">
       <p className="eyebrow">네 번째 단계</p>
-      <h2 id="forecast-title">손상 가능성 예보</h2>
+      <h2 id="forecast-title" data-step-heading="true" tabIndex={-1}>손상 가능성 예보</h2>
       <p>처음 세운 관리 계획을 보고, 생길 수 있는 변화를 위험이 아닌 가능성으로 골라 봐요.</p>
       <p className="learning-boundary">확률이나 실제 손상 사진은 사용하지 않아요. 표시와 가상 계획을 연결해 상대적으로 살펴봅니다.</p>
 
@@ -190,9 +197,15 @@ export function DamageForecastScreen({
 
       {selectionMessage && <p className="forecast-message" role="status" aria-live="polite">{selectionMessage}</p>}
       {feedback && (
-        <div className="forecast-feedback" role="status" aria-live="polite">
-          <h3>예보 피드백</h3>
-          <p>{feedbackSummary(feedback)}</p>
+        <div className="forecast-feedback">
+          <div role="status" aria-live="polite">
+            <h3>예보 피드백</h3>
+            <p>{learnerPredictionMessage(feedback, (symbolId) => symbols.find((symbol) => symbol.id === symbolId)?.name ?? '관련 표시')}</p>
+          </div>
+          <details className="forecast-detail">
+            <summary>자세한 연결 결과 보기</summary>
+            <ul>{feedbackDetailLines(feedback, symbols).map((line) => <li key={line}>{line}</li>)}</ul>
+          </details>
           {needsEvidenceReview && (
             <div className="evidence-review">
               <p>근거가 부족해요. 관련 표시의 확대경 내용을 다시 확인해 보세요.</p>
@@ -236,8 +249,8 @@ export function DamageForecastScreen({
       )}
 
       <SafetyNotice />
-      <button type="button" className="primary-action" onClick={submit}>손상 예보 확인</button>
-      <button type="button" className="simulation-action" disabled={feedback === null} onClick={onShowSimulation}>가상 결과 보기</button>
+      <ActionButton type="button" className="primary-action" emphasis={feedback === null ? 'required' : 'normal'} onClick={submit}>손상 예보 확인</ActionButton>
+      <ActionButton type="button" className="simulation-action" emphasis={feedback === null ? 'normal' : 'required'} disabled={feedback === null} onClick={onShowSimulation}>가상 결과 보기</ActionButton>
     </section>
   );
 }

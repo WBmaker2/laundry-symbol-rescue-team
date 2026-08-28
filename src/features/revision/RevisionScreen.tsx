@@ -56,6 +56,15 @@ function garmentNames(mission: GarmentMission, ids: readonly string[]): string {
   return names.length > 0 ? names.join(', ') : '없음';
 }
 
+function symbolNames(ids: readonly CareSymbolId[]): string {
+  const names = ids.map((id) => careSymbolById.get(id)?.name ?? '관련 표시');
+  return names.length > 0 ? names.join(', ') : '선택하지 않았어요.';
+}
+
+function selectedRiskNames(ids: readonly string[]): string {
+  return ids.map((id) => riskLabels[id] ?? '선택한 위험').join(', ') || '선택하지 않았어요.';
+}
+
 export interface RevisionScreenProps {
   mission: GarmentMission;
   initialPlan: StudentPlan;
@@ -135,7 +144,7 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
   return (
     <section className="revision-screen" data-app-step="revision" aria-labelledby="revision-title">
       <p className="eyebrow">여섯 번째 단계</p>
-      <h2 id="revision-title">관리 계획 수정</h2>
+      <h2 id="revision-title" data-step-heading="true" tabIndex={-1}>관리 계획 수정</h2>
       <p>가상 결과는 가능성을 보여 줘요. 최초 계획과 발견을 근거로 필요한 부분만 다시 계획해요.</p>
       {predictionFeedback && <p className="revision-feedback" role="status" aria-live="polite">앞에서 확인한 예측: {predictionFeedback.message}</p>}
 
@@ -165,7 +174,7 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
           <p data-grouping-assignment="together"><strong>함께</strong>: {garmentNames(mission, initialPlan.grouping.togetherGarmentIds)}</p>
           <p data-grouping-assignment="separate"><strong>따로</strong>: {garmentNames(mission, initialPlan.grouping.separateGarmentIds)}</p>
           <p><strong>최초 묶음 근거</strong>: {initialPlan.grouping.reasonSymbolIds.length > 0
-            ? initialPlan.grouping.reasonSymbolIds.map((id) => `${careSymbolById.get(id)?.name ?? id} (${id})`).join(', ')
+            ? symbolNames(initialPlan.grouping.reasonSymbolIds)
             : '선택하지 않았어요.'}</p>
           {initialGroupingEvaluation?.findings.filter(({ code }) => code !== 'compatible-group').map((finding, index) => (
             <p key={`${finding.code}-${index}`}>{finding.feedback}</p>
@@ -175,12 +184,8 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
 
       <section className="initial-prediction" aria-label="최초 예측 선택" role="region" data-read-only="true">
         <h3>최초 예측 선택</h3>
-        <p><strong>선택한 위험</strong>: {prediction && prediction.riskIds.length > 0
-          ? prediction.riskIds.map((id) => `${riskLabels[id] ?? id} (${id})`).join(', ')
-          : '선택하지 않았어요.'}</p>
-        <p><strong>선택한 근거 표시</strong>: {prediction && prediction.reasonSymbolIds.length > 0
-          ? prediction.reasonSymbolIds.map((id) => `${careSymbolById.get(id)?.name ?? id} (${id})`).join(', ')
-          : '선택하지 않았어요.'}</p>
+        <p><strong>선택한 위험</strong>: {prediction ? selectedRiskNames(prediction.riskIds) : '선택하지 않았어요.'}</p>
+        <p><strong>선택한 근거 표시</strong>: {prediction ? symbolNames(prediction.reasonSymbolIds) : '선택하지 않았어요.'}</p>
       </section>
 
       <fieldset className="revision-reasons">

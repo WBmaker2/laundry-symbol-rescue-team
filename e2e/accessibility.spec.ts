@@ -68,6 +68,8 @@ test.describe('classroom accessibility', () => {
     await expect(page.locator('.mission-card').first()).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-app-step="request"]')).toBeVisible();
+    await expect(page.locator('[data-app-step="request"] [data-step-heading="true"]')).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
     await tabTo(page, '[data-app-step="request"] .primary-action');
     await expect(page.getByRole('button', { name: '표시 확대' })).toBeFocused();
     await page.keyboard.press('Enter');
@@ -91,6 +93,8 @@ test.describe('classroom accessibility', () => {
 
     await expect(page.locator('[aria-current="step"]')).toContainText('관리 순서판');
     await expect(page.locator('[data-app-step="plan"]')).toBeVisible();
+    await expect(page.locator('[data-app-step="plan"] [data-step-heading="true"]')).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
     await expectNamedControls(page, 'checkbox');
     await expectStatus(page, '[data-app-step="plan"]', /단계가 배치/);
     for (const [optionId, placement] of [
@@ -101,8 +105,8 @@ test.describe('classroom accessibility', () => {
       await tabTo(page, `[data-care-option-id="${optionId}"]`);
       await expect(page.locator(`[data-care-option-id="${optionId}"]`)).toBeFocused();
       await page.keyboard.press('Enter');
-      await tabTo(page, '.stage-place-button:not([disabled])');
-      await expect(page.getByRole('button', { name: placement })).toBeFocused();
+      await tabTo(page, '.selected-option-place-button');
+      await expect(page.getByRole('button', { name: `선택한 카드 ${placement.replace(' 단계에 놓기', '')} 단계에 놓기` })).toBeFocused();
       await page.keyboard.press('Enter');
     }
     for (const id of ['care-no-bleach', 'care-tumble-low']) {
@@ -115,6 +119,7 @@ test.describe('classroom accessibility', () => {
 
     await expect(page.locator('[aria-current="step"]')).toContainText('손상 예보');
     await expect(page.locator('section.forecast-screen')).toBeVisible();
+    await expect(page.locator('[data-app-step="forecast"] [data-step-heading="true"]')).toBeFocused();
     await tabTo(page, 'input[data-risk-selection-id="shrinkage"]');
     await page.keyboard.press('Space');
     await tabTo(page, 'input[data-evidence-symbol-id="care-wash-30-gentle"]');
@@ -122,15 +127,21 @@ test.describe('classroom accessibility', () => {
     await tabTo(page, '[data-app-step="forecast"] .primary-action');
     await page.keyboard.press('Enter');
     await expectStatus(page, '[data-app-step="forecast"]', /예측|예보|가능성/);
+    const studentFeedback = page.locator('[data-app-step="forecast"] .forecast-feedback [role="status"]');
+    await expect(studentFeedback).toContainText(/표시|가능성/);
+    await expect(studentFeedback).not.toContainText(/\d+\/\d+|\d+개/);
+    await expect(page.getByText('자세한 연결 결과 보기')).toBeVisible();
     await tabTo(page, '[data-app-step="forecast"] .simulation-action:not([disabled])');
     await page.keyboard.press('Enter');
 
     await expect(page.locator('[aria-current="step"]')).toContainText('가상 관리');
     await expect(page.locator('section.virtual-care-screen')).toBeVisible();
+    await expect(page.locator('[data-app-step="simulation"] [data-step-heading="true"]')).toBeFocused();
     await tabTo(page, 'section.virtual-care-screen .simulation-action');
     await page.keyboard.press('Enter');
     await expect(page.locator('[aria-current="step"]')).toContainText('계획 수정');
     await expect(page.locator('section.revision-screen')).toBeVisible();
+    await expect(page.locator('[data-app-step="revision"] [data-step-heading="true"]')).toBeFocused();
     await expectStatus(page, '[data-app-step="revision"]', /예측|가능성/);
     await expectNamedControls(page, 'radio');
     await expectNamedControls(page, 'checkbox');
@@ -143,6 +154,7 @@ test.describe('classroom accessibility', () => {
     await page.keyboard.press('Enter');
     await expect(page.locator('[aria-current="step"]')).toContainText('구조 보고서');
     await expect(page.getByRole('heading', { name: '구조 보고서' })).toBeVisible();
+    await expect(page.locator('[data-app-step="report"] [data-step-heading="true"]')).toBeFocused();
   });
 
   test('names every published symbol with meaning and current-plan context', async ({ page }) => {
