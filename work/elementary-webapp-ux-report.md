@@ -10,7 +10,8 @@
 - 주 페르소나: 초등 5~6학년 서윤
 - 가드레일 페르소나: 초등 3~4학년 준호
 - VoiceOver: 요청 범위에서 제외
-- 커밋·푸시·GitHub Pages 배포·HVC 등록: 실행하지 않음
+- 커밋·푸시·GitHub Pages 배포: 완료
+- HVC 등록: 실행하지 않음
 
 ## Stage 0 and routing
 
@@ -60,6 +61,7 @@
 - `git diff --check` PASS
 - 소스 최대 파일 477줄(`src/styles/layout.css`), 500줄 제한 준수
 - Impeccable detector PASS — 결과 `[]`
+- GitHub Actions `33349138474` PASS — `npm run check`, Playwright E2E 21개, Pages Deploy 모두 성공
 
 Vitest의 `Window's scrollTo() method` 메시지는 jsdom이 scrollTo를 구현하지 않았다는 비차단 경고이며 테스트 실패가 아닙니다.
 
@@ -80,11 +82,11 @@ Vitest의 `Window's scrollTo() method` 메시지는 jsdom이 scrollTo를 구현�
 - 학생용 문구 장부: [work/elementary-webapp-ux-language-audit.md](</Volumes/ External Drive 256G/Dev2/codex/laundry-symbol-rescue-team/work/elementary-webapp-ux-language-audit.md>)
 - 시뮬레이션 결정 장부: [work/elementary-webapp-ux-simulation-decision.md](</Volumes/ External Drive 256G/Dev2/codex/laundry-symbol-rescue-team/work/elementary-webapp-ux-simulation-decision.md>) — `not-needed`
 - 핵심 경로·모바일·키보드의 완전한 release score: 자동 E2E 환경과 실제 학생 probe가 남아 있어 정량 점수는 산정하지 않았습니다.
-- 현재 게이트: `conditional` — P0/P1은 없고 로컬 코드·Vitest·MCP 대표 경로는 확인했지만, macOS Chromium 권한 오류로 CLI Playwright 전체 실행과 실제 학생·교사·Safari 수동 확인이 남았습니다.
+- 현재 게이트: `conditional` — P0/P1은 없고 CI Ubuntu의 전체 Playwright E2E와 공개 경로는 확인했지만, 실제 학생·교사·Safari 수동 확인이 남았습니다. macOS 로컬 CLI Playwright는 Chromium 권한 오류로 별도 실행하지 않았습니다.
 
 ## Not run / blocked
 
-- `npm run test:e2e` 전체 실행: 이전 두 번의 macOS Chromium `mach_port_rendezvous … Permission denied (1100)` 이후 같은 실패를 반복하지 않고 `blocked`로 유지했습니다. CI Ubuntu 또는 권한이 정상인 Chromium에서 아래 명령을 실행해야 합니다.
+- macOS에서의 `npm run test:e2e` 전체 실행: 이전 두 번의 Chromium `mach_port_rendezvous … Permission denied (1100)` 이후 같은 환경 오류를 반복하지 않고 `blocked`로 유지했습니다. 대신 CI Ubuntu에서 같은 전체 계약이 성공했습니다.
 
 ```bash
 npm run test:e2e -- e2e/accessibility.spec.ts e2e/responsive.spec.ts e2e/learner-flow.spec.ts e2e/safety-boundaries.spec.ts
@@ -98,4 +100,12 @@ npm run test:e2e -- e2e/accessibility.spec.ts e2e/responsive.spec.ts e2e/learner
 
 학습자는 오답 뒤 현재 그림에서 다시 볼 모양을 알고 다른 뜻을 고를 수 있고, 관리 계획에서는 지금 필요한 단계 카드만 보며 세탁→건조→다림질 순서를 따라갈 수 있습니다. 다음 권장 작업은 CI의 깨끗한 Chromium에서 갱신한 E2E 계약을 실행한 뒤, 교사가 320px·375px에서 한 명의 학생에게 문장을 자기 말로 다시 설명해 보게 하는 수동 확인입니다.
 
-현재 공개 learner path(이번 미커밋 변경 전 공개본): [세탁표시 구조대 Pages](https://wbmaker2.github.io/laundry-symbol-rescue-team/)
+## Release evidence
+
+- 코드 커밋: `533d59f` (`fix: stabilize CI accessibility and narrow layout`)
+- 원격 반영: `origin/main` 푸시 성공
+- 검사·배포 실행: [GitHub Actions run 33349138474](https://github.com/WBmaker2/laundry-symbol-rescue-team/actions/runs/33349138474)
+- 실행 결과: `npm run check` 성공, Playwright E2E 21개 성공, GitHub Pages Deploy 성공
+- 공개 URL: [세탁표시 구조대 Pages](https://wbmaker2.github.io/laundry-symbol-rescue-team/)
+- 공개 smoke: HTTP 200, 제목 `세탁표시 구조대`, 첫 미션에서 구조 보고서까지 완료, 콘솔 오류 0, JavaScript·앱 아이콘·기호 SVG 응답 200
+- 남은 운영 단계: 실제 초등학생·교사·Safari 수동 확인 및 HVC 등록
