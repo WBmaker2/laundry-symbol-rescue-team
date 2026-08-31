@@ -67,8 +67,9 @@ async function completeInterpretations(page: Page, missionId: MissionId): Promis
 }
 
 async function placeOption(page: Page, optionId: CareOptionId, stage: PlanningStage): Promise<void> {
-  await page.locator(`[data-care-option-id="${optionId}"]`).click();
   const stageName = { wash: '세탁', dry: '건조', iron: '다림질' }[stage];
+  await page.getByRole('button', { name: `${stageName} 단계 보기` }).click();
+  await page.locator(`[data-care-option-id="${optionId}"]`).click();
   await page.getByRole('button', { name: `선택한 카드 ${stageName} 단계에 놓기` }).click();
 }
 

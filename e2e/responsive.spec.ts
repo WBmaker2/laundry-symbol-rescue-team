@@ -61,15 +61,20 @@ async function driveFirstMission(page: Page, stopAt: 'plan' | 'forecast' | 'simu
   }
   await expect(page.locator('[data-app-step="plan"]')).toBeVisible();
   await assertStepLayout(page);
+  await expect(page.locator('[data-care-option-id]')).toHaveCount(3);
+  await expect(page.locator('.stage-option-hint')).toHaveText(/지금은 세탁 카드만 보여요/);
   if (requireSingleColumn) {
     await assertSingleColumn(page, '.plan-stage-list');
     await assertSingleColumn(page, '.care-option-grid');
   }
   if (stopAt === 'plan') return;
+  await page.getByRole('button', { name: '세탁 단계 보기' }).press('Enter');
   await page.locator('[data-care-option-id="plan-wash-gentle-30"]').press('Enter');
   await page.getByRole('button', { name: '선택한 카드 세탁 단계에 놓기' }).press('Enter');
+  await page.getByRole('button', { name: '건조 단계 보기' }).press('Enter');
   await page.locator('[data-care-option-id="plan-dry-tumble-low"]').press('Enter');
   await page.getByRole('button', { name: '선택한 카드 건조 단계에 놓기' }).press('Enter');
+  await page.getByRole('button', { name: '다림질 단계 보기' }).press('Enter');
   await page.locator('[data-care-option-id="plan-iron-none"]').press('Enter');
   await page.getByRole('button', { name: '선택한 카드 다림질 단계에 놓기' }).press('Enter');
   await page.getByRole('checkbox', { name: /표백 금지 확인/ }).press('Space');
@@ -214,6 +219,7 @@ test.describe('responsive classroom layout', () => {
     await page.goto('./');
     await page.getByRole('button', { name: '고대비 모드' }).press('Enter');
     await driveFirstMission(page, 'plan', false);
+    await page.getByRole('button', { name: '세탁 단계 보기' }).press('Enter');
     await page.locator('[data-care-option-id="plan-wash-gentle-30"]').press('Enter');
     const selectedCard = page.locator('.care-option-card.is-selected').first();
     await expect(selectedCard).toHaveCSS('border-width', '4px');

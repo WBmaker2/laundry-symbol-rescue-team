@@ -1,5 +1,6 @@
 import type { CareSymbol } from './careTypes';
 import type { InterpretationFeedback } from './evaluationTypes';
+import { interpretationRetryHints, learnerCopy } from '../content/learnerCopy';
 
 export function evaluateInterpretation({
   symbol,
@@ -23,6 +24,6 @@ export function evaluateInterpretation({
     explanation: symbol.shortDescription,
     returnPrompt: isCorrect
       ? '이 표시가 관리 행동과 어떻게 이어지는지 확인해 보세요.'
-      : '기호 옆 설명에서 온도와 줄 표시를 다시 찾아보세요.',
+      : `아직 맞지 않아요. 이 표시에서 ${interpretationRetryHints[symbol.id] ?? learnerCopy.wrongAnswerHint}를 다시 찾아보고 다른 뜻을 골라 보세요.`,
   };
 }

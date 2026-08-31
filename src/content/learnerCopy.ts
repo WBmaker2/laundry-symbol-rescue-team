@@ -1,5 +1,40 @@
-import type { DamageRiskId } from '../domain/careTypes';
+import type { CareSymbolId, DamageRiskId } from '../domain/careTypes';
 import type { PredictionFeedback } from '../domain/evaluatePrediction';
+
+export interface LearnerCopy {
+  materialBoundary: string;
+  scenario: string;
+  gentleCare: string;
+  tumbleDrying: string;
+  professionalCare: string;
+  allowedRange: string;
+  wrongAnswerHint: string;
+}
+
+/**
+ * 오답 뒤에 학습자가 현재 그림에서 다시 찾아볼 수 있는 관찰 단서입니다.
+ * 정답을 알려 주지 않고 숫자·선·점·모양만 가리킵니다.
+ */
+export const interpretationRetryHints: Readonly<Record<CareSymbolId, string>> = {
+  'care-wash-30-gentle': '세탁통 안 숫자 30과 아래 한 줄',
+  'care-no-bleach': '삼각형 안의 엑스',
+  'care-flat-dry': '네모 안 가로선',
+  'care-tumble-low': '네모 안 원과 점 하나',
+  'care-no-tumble': '네모 안 원 안의 엑스',
+  'care-iron-low': '다리미 안 점 하나',
+  'care-no-iron': '다리미 안의 엑스',
+  'care-professional': '원 안의 P 글자',
+};
+
+export const learnerCopy: LearnerCopy = {
+  materialBoundary: '이 재료에 대해 꼭 기억할 점',
+  scenario: '이번에 가정한 상황',
+  gentleCare: '옷을 덜 세게 다루는 방법',
+  tumbleDrying: '통이 빙글빙글 도는 건조',
+  professionalCare: '어른이나 전문가에게 먼저 물어보기',
+  allowedRange: '표시에 맞는 방법',
+  wrongAnswerHint: '표시 안의 숫자·점·선·모양을 다시 찾아보세요.',
+};
 
 export const learnerGlossaryTerms: readonly (readonly [string, string])[] = [
   ['옷을 덜 세게 다루는 방법', '강한 과정 대신 옷을 덜 자극하는 조건을 말해요.'],

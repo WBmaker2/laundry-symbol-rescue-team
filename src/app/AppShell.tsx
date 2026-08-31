@@ -164,6 +164,7 @@ export function AppShell() {
       data-testid="app-shell"
       data-contrast={highContrast ? 'high' : 'normal'}
     >
+      <a className="skip-link" href="#main-content">본문으로 건너뛰기</a>
       <header className="app-header">
         <div>
           <h1 className="service-name">세탁표시 구조대</h1>
@@ -172,7 +173,7 @@ export function AppShell() {
         <HighContrastToggle enabled={highContrast} onToggle={() => setHighContrast((value) => !value)} />
         <ProgressIndicator currentStep={state.step} />
       </header>
-      <main ref={mainRef} className="app-main" data-app-step={state.step}>
+      <main id="main-content" ref={mainRef} className="app-main" data-app-step={state.step} tabIndex={-1}>
         <StepContent step={state.step} />
       </main>
       <footer className="app-footer">

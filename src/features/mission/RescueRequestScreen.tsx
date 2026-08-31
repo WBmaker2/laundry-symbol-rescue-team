@@ -2,6 +2,8 @@ import type { GarmentMission } from '../../domain/missionTypes';
 import type { ReactNode } from 'react';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { ActionButton } from '../../components/ui/ActionButton';
+import { StepIntro } from '../../components/ui/StepIntro';
+import { learnerCopy } from '../../content/learnerCopy';
 
 type IllustrationKind = 'shirt' | 'scarf' | 'sportswear' | 'decorated-top';
 
@@ -33,11 +35,14 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
   return (
     <section className="request-screen" data-mission-id={mission.id} aria-labelledby="request-title">
       <div className="request-heading">
-        <p className="eyebrow">{mission.order}번째 구조 요청</p>
-        <h2 id="request-title" data-step-heading="true" tabIndex={-1}>{mission.title.split('의 ')[0]} 구조 요청</h2>
+        <StepIntro
+          eyebrow={`${mission.order}번째 구조 요청`}
+          title={`${mission.title.split('의 ')[0]} 구조 요청`}
+          titleId="request-title"
+          description={<><strong>이번 질문:</strong> {mission.openingPrompt}</>}
+          nextActionLabel="표시 확대 버튼을 눌러 라벨 단서를 살펴봐요."
+        />
       </div>
-
-      <p className="opening-prompt"><strong>이번 질문:</strong> {mission.openingPrompt}</p>
       <ActionButton type="button" className="primary-action" emphasis="required" onClick={onOpenMagnifier}>
         표시 확대
       </ActionButton>
@@ -52,9 +57,9 @@ export function RescueRequestScreen({ mission, onOpenMagnifier }: {
               <dl className="garment-facts">
                 <dt>재료</dt>
                 <dd>{garment.materialModel}</dd>
-                <dt>재료 경계</dt>
+                <dt>{learnerCopy.materialBoundary}</dt>
                 <dd>{garment.materialBoundary}</dd>
-                <dt>가상 오염 상황</dt>
+                <dt>{learnerCopy.scenario}</dt>
                 <dd>{garment.contaminationScenario}</dd>
               </dl>
             </div>

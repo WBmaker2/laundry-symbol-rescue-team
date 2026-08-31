@@ -8,6 +8,7 @@ import { careOptionTitle } from '../plan/planLabels';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { BeforeAfterComparison } from './BeforeAfterComparison';
 import { ActionButton } from '../../components/ui/ActionButton';
+import { StepIntro } from '../../components/ui/StepIntro';
 
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
 const stageLabels: Readonly<Record<PlanningStage, string>> = { wash: '세탁', dry: '건조', iron: '다림질' };
@@ -52,11 +53,31 @@ export interface VirtualCareScreenProps {
 export function VirtualCareScreen({ mission, plan, evaluation, predictionFeedback, onStartRevision }: VirtualCareScreenProps) {
   return (
     <section className="virtual-care-screen" data-app-step="simulation" aria-labelledby="virtual-care-title" aria-describedby="virtual-care-boundary">
-      <p className="eyebrow">다섯 번째 단계</p>
-      <h2 id="virtual-care-title" data-step-heading="true" tabIndex={-1}>가상 결과 확인</h2>
+      <StepIntro
+        eyebrow="다섯 번째 단계"
+        title="가상 결과 확인"
+        titleId="virtual-care-title"
+        description="처음 세운 계획을 가상 재료 모형에 적용해 보고, 단계별 변화 가능성을 살펴봐요."
+        nextActionLabel="전후 비교를 읽고 계획 수정하기를 눌러요."
+      />
       <p><strong>현재 미션</strong>: {mission.title}</p>
-      <p>처음 세운 계획을 가상 재료 모형에 적용해 보고, 단계별 변화 가능성을 살펴봐요.</p>
       <p className="learning-boundary">결과는 가능성을 비교하는 학습 자료이며 실제 옷의 상태를 판정하지 않아요.</p>
+
+      <section className="result-summary" aria-label="결과 한눈에 보기">
+        <h3>결과 한눈에 보기</h3>
+        <ul>
+          {stages.map((stage) => {
+            const finding = stageFinding(evaluation, stage);
+            const isAllowed = !finding || finding.status === 'allowed';
+            return (
+              <li key={stage} data-result-status={isAllowed ? 'allowed' : 'caution'}>
+                <strong>{stageLabels[stage]}</strong>
+                <span>{isAllowed ? '현재 조건을 그대로 비교해 봐요.' : '표시와 조건을 다시 살펴볼 필요가 있어요.'}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <ol className="virtual-stage-list" aria-label="세탁·건조·다림질 순서">
         {stages.map((stage) => {

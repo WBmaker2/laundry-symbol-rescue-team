@@ -17,6 +17,7 @@ describe('Task 12 구조 보고서와 업데이트 내역', () => {
     expect(screen.getByRole('heading', { name: '구조 보고서' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '최초 계획' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '수정 계획' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '안전한 관리와 도움 요청' })).toBeInTheDocument();
     expect(screen.getByText(/실제 옷에서는 제품 라벨/)).toBeInTheDocument();
     expect(screen.getByText(/낮음|보통|높음/)).toBeInTheDocument();
     expect(screen.getByText(/책임 있는 관리/)).toBeInTheDocument();
@@ -52,6 +53,12 @@ describe('Task 12 구조 보고서와 업데이트 내역', () => {
     await user.click(screen.getByRole('button', { name: '다른 미션 해보기' }));
     expect(screen.getByRole('heading', { name: '구조할 가상 옷을 골라 보세요' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '구조할 가상 옷을 골라 보세요' })).toHaveFocus();
+  });
+  it('보고서 상단에서 배운 점과 다음 행동을 먼저 보여 준다', () => {
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'report' });
+    const nextAction = screen.getByRole('region', { name: '다음 행동' });
+    expect(nextAction).toHaveTextContent('배운 점');
+    expect(nextAction).toHaveTextContent('다른 미션 해보기');
   });
 
   it('does not turn an unsupported selected risk into another predicted risk', () => {

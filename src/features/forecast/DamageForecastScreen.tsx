@@ -12,6 +12,7 @@ import { SymbolFigure } from '../../components/ui/SymbolFigure';
 import { RiskCard } from './RiskCard';
 import { learnerPredictionMessage, learnerRiskCopy } from '../../content/learnerCopy';
 import { ActionButton } from '../../components/ui/ActionButton';
+import { StepIntro } from '../../components/ui/StepIntro';
 
 const riskIds: readonly DamageRiskId[] = [
   'shrinkage', 'deformation', 'color-change', 'decoration-damage', 'heat-damage',
@@ -153,9 +154,13 @@ export function DamageForecastScreen({
 
   return (
     <section className="forecast-screen" data-app-step="forecast" aria-labelledby="forecast-title">
-      <p className="eyebrow">네 번째 단계</p>
-      <h2 id="forecast-title" data-step-heading="true" tabIndex={-1}>손상 가능성 예보</h2>
-      <p>처음 세운 관리 계획을 보고, 생길 수 있는 변화를 위험이 아닌 가능성으로 골라 봐요.</p>
+      <StepIntro
+        eyebrow="네 번째 단계"
+        title="손상 가능성 예보"
+        titleId="forecast-title"
+        description="처음 세운 관리 계획을 보고, 생길 수 있는 변화를 위험이 아닌 가능성으로 골라 봐요."
+        nextActionLabel="가능한 변화와 관련 표시를 고른 뒤 손상 예보를 확인해요."
+      />
       <p className="learning-boundary">확률이나 실제 손상 사진은 사용하지 않아요. 표시와 가상 계획을 연결해 상대적으로 살펴봅니다.</p>
 
       <fieldset className="risk-card-grid" aria-describedby="risk-selection-description">

@@ -11,6 +11,8 @@ import { AchievementChecklist } from './AchievementChecklist';
 import { ActionButton } from '../../components/ui/ActionButton';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
 import { PROFESSIONAL_HELP_NOTICE } from '../../content/safetyNotices';
+import { StepIntro } from '../../components/ui/StepIntro';
+import { NextActionPanel } from './NextActionPanel';
 
 const riskLabels: Readonly<Record<DamageRiskId, string>> = {
   shrinkage: '줄어듦', deformation: '변형', 'color-change': '색 변화',
@@ -108,9 +110,19 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
   const evidenceNames = revisionEvidence.relatedSymbolIds.map((id) => careSymbolById.get(id)?.name ?? '관련 표시');
   return (
     <section className="rescue-report-screen" data-app-step="report" aria-labelledby="rescue-report-title">
-      <p className="eyebrow">일곱 번째 단계</p>
-      <h2 id="rescue-report-title" data-step-heading="true" tabIndex={-1}>구조 보고서</h2>
+      <StepIntro
+        eyebrow="일곱 번째 단계"
+        title="구조 보고서"
+        titleId="rescue-report-title"
+        description="표시를 읽고 계획을 고친 과정을 한 장의 관리 카드로 정리해요."
+        nextActionLabel="배운 점을 확인하고 다른 미션으로 이어가요."
+      />
       <AchievementChecklist summary={summary} />
+      <NextActionPanel
+        actionId="report-next-action"
+        actionLabel="다른 미션 해보기"
+        description="배운 점: 표시의 뜻을 관리 행동과 연결하고, 가장 조심스러운 조건을 골라 근거와 함께 계획을 바꿨어요."
+      />
 
       <section className="report-section" aria-labelledby="mission-boundary-title">
         <h3 id="mission-boundary-title">미션·가상 재료와 학습 경계</h3>
@@ -171,7 +183,7 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
         <p>정확한 양이나 실제 절약량이 아닌 학습용 상대 비교예요.</p>
       </section>
 
-      <section className="report-section responsible-care-evidence" aria-label="responsible-care evidence" role="region">
+      <section className="report-section responsible-care-evidence" aria-label="안전한 관리와 도움 요청" role="region">
         <h3>책임 있는 관리와 도움 요청</h3>
         <p>제품 정보를 보호자·교사와 함께 살펴보는 것이 안전한 관리의 출발점이에요.</p>
         <p>{PROFESSIONAL_HELP_NOTICE}</p>
@@ -179,7 +191,7 @@ export function RescueReportScreen(props: RescueReportScreenProps) {
       </section>
 
       <SafetyNotice />
-      <ActionButton type="button" className="primary-action report-restart-action" emphasis="required" onClick={onRestartMission}>다른 미션 해보기</ActionButton>
+      <ActionButton id="report-next-action" type="button" className="primary-action report-restart-action" emphasis="required" onClick={onRestartMission}>다른 미션 해보기</ActionButton>
     </section>
   );
 }

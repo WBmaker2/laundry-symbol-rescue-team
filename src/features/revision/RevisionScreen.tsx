@@ -12,7 +12,7 @@ import { evaluatePlan } from '../../domain/evaluatePlan';
 import { ManagementBoardScreen } from '../plan/ManagementBoardScreen';
 import { CurrentPlanSummary } from '../plan/CurrentPlanSummary';
 import { careOptionById } from '../../content/careOptions';
-import { SafetyNotice } from '../../components/ui/SafetyNotice';
+import { StepIntro } from '../../components/ui/StepIntro';
 
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
 const reasonLabels: Readonly<Record<Exclude<RevisionReasonId, 'confirm-current-plan'>, string>> = {
@@ -143,9 +143,13 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
 
   return (
     <section className="revision-screen" data-app-step="revision" aria-labelledby="revision-title">
-      <p className="eyebrow">여섯 번째 단계</p>
-      <h2 id="revision-title" data-step-heading="true" tabIndex={-1}>관리 계획 수정</h2>
-      <p>가상 결과는 가능성을 보여 줘요. 최초 계획과 발견을 근거로 필요한 부분만 다시 계획해요.</p>
+      <StepIntro
+        eyebrow="여섯 번째 단계"
+        title="관리 계획 수정"
+        titleId="revision-title"
+        description="가상 결과는 가능성을 보여 줘요. 최초 계획과 발견을 근거로 필요한 부분만 다시 계획해요."
+        nextActionLabel="수정 이유와 근거를 고른 뒤 수정 계획을 확인해요."
+      />
       {predictionFeedback && <p className="revision-feedback" role="status" aria-live="polite">앞에서 확인한 예측: {predictionFeedback.message}</p>}
 
       <section className="initial-plan-comparison" aria-label="최초 계획과 비교" role="region">
@@ -210,7 +214,6 @@ export function RevisionScreen({ mission, initialPlan, initialEvaluation, initia
 
       {message && <p className="revision-message" role="alert">{message}</p>}
       <ManagementBoardScreen mission={mission} mode="revision" initialPlan={initialPlan} onSubmit={handlePlanSubmit} />
-      <SafetyNotice />
     </section>
   );
 }

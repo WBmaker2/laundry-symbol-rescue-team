@@ -11,6 +11,8 @@ import { ActionButton } from '../../components/ui/ActionButton';
 import { CurrentPlanSummary } from './CurrentPlanSummary';
 import { CareOptionCard } from './CareOptionCard';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
+import { PlanStageNavigator } from './PlanStageNavigator';
+import { StepIntro } from '../../components/ui/StepIntro';
 
 const stages: readonly PlanningStage[] = ['wash', 'dry', 'iron'];
 const stageLabels: Readonly<Record<PlanningStage, string>> = {
@@ -47,9 +49,11 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
   const [acknowledgedRestrictionIds, setAcknowledgedRestrictionIds] = useState<CareSymbolId[]>(() => [...(initialPlan?.acknowledgedRestrictionIds ?? [])]);
   const [grouping, setGrouping] = useState<GroupingChoice | null>(() => initialPlan?.grouping ?? initialGrouping(mission));
   const [message, setMessage] = useState<string | null>(null);
+  const [activeStage, setActiveStage] = useState<PlanningStage>(() => stages.find((stage) => initialPlan?.stageOptions[stage] === null) ?? 'wash');
   const headingRefs = useRef<Partial<Record<PlanningStage, HTMLHeadingElement | null>>>({});
   const restrictions = restrictionIds(mission);
   const selectedOption = selectedOptionId === null ? undefined : careOptionById.get(selectedOptionId);
+  const visibleCareOptions = careOptions.filter((option) => option.stage === activeStage);
 
   function chooseOption(optionId: CareOptionId) {
     setSelectedOptionId(optionId);
@@ -59,6 +63,13 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
   function placeOption(stage: PlanningStage) {
     if (!selectedOption || selectedOption.stage !== stage) return;
     setStageOptions((current) => ({ ...current, [stage]: selectedOption.id }));
+    setSelectedOptionId(null);
+    if (mode === 'revision') {
+      const currentIndex = stages.indexOf(stage);
+      setActiveStage(stages[(currentIndex + 1) % stages.length] ?? stage);
+    } else {
+      setActiveStage(stages.find((nextStage) => nextStage !== stage && stageOptions[nextStage] === null) ?? stage);
+    }
     setMessage(null);
   }
 
@@ -133,16 +144,31 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
 
   return (
     <section className="management-board" data-mission-id={mission.id} aria-labelledby="management-board-title">
-      <p className="eyebrow">{mode === 'revision' ? '여섯 번째 단계' : '세 번째 단계'}</p>
-      <h2
-        id="management-board-title"
-        data-step-heading={mode === 'initial' ? 'true' : undefined}
-        tabIndex={mode === 'initial' ? -1 : undefined}
-      >
-        {mode === 'revision' ? '새 수정 계획 만들기' : '관리 순서판'}
-      </h2>
-      <p>{mode === 'revision' ? '최초 계획을 살펴본 뒤, 바꿀 카드만 다시 골라 단계에 놓아요.' : '관리 방법 카드를 먼저 고르고, 카드를 놓을 단계를 버튼으로 선택해요.'}</p>
+      {mode === 'initial' ? (
+        <StepIntro
+          eyebrow="세 번째 단계"
+          title="관리 순서판"
+          titleId="management-board-title"
+          description="관리 방법 카드를 먼저 고르고, 카드를 놓을 단계를 버튼으로 선택해요."
+          nextActionLabel="관리 방법 카드 하나를 고른 뒤 맞는 단계에 놓아요."
+        />
+      ) : (
+        <>
+          <p className="eyebrow">여섯 번째 단계</p>
+          <h2 id="management-board-title">새 수정 계획 만들기</h2>
+          <p>최초 계획을 살펴본 뒤, 바꿀 카드만 다시 골라 단계에 놓아요.</p>
+        </>
+      )}
       <p className="learning-boundary">카드의 조건은 가상 재료 모형을 비교하는 학습 자료예요. 실제 옷은 제품 라벨과 보호자·교사 안내를 먼저 확인해요.</p>
+
+      <PlanStageNavigator
+        activeStage={activeStage}
+        completedStages={stages.filter((stage) => stageOptions[stage] !== null)}
+        onStageChange={(stage) => {
+          setActiveStage(stage);
+          headingRefs.current[stage]?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+        }}
+      />
 
       <CurrentPlanSummary
         stageOptions={stageOptions}
@@ -182,8 +208,11 @@ export function ManagementBoardScreen({ mission, mode = 'initial', initialPlan =
 
       <section className="care-options" aria-labelledby="care-options-title">
         <h3 id="care-options-title">관리 방법 카드 고르기</h3>
+        <p className="stage-option-hint" role="status" aria-live="polite">
+          지금은 {stageLabels[activeStage]} 카드만 보여요. 다른 단계는 위 버튼으로 바꿔요.
+        </p>
         <div className="care-option-grid">
-          {careOptions.map((option) => (
+          {visibleCareOptions.map((option) => (
             <CareOptionCard
               key={option.id}
               option={option}

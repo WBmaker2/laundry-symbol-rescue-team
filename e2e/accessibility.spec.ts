@@ -62,6 +62,25 @@ test.describe('classroom accessibility', () => {
     await expect(page.getByRole('button', { name: '고대비 모드' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  test('gives symbol-specific recovery guidance after an incorrect meaning', async ({ page }) => {
+    await page.goto('./');
+    await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).click();
+    await page.getByRole('button', { name: '표시 확대' }).click();
+    const firstCard = page.locator('.care-symbol-card');
+    await firstCard.getByRole('radio', { name: /40°C의 보통/ }).check();
+    await firstCard.getByRole('button', { name: '뜻 확인' }).click();
+    await expectStatus(page, '[data-app-step="magnifier"]', /아직 맞지 않아요.*숫자 30.*한 줄.*다른 뜻/);
+    await expect(page.locator('[data-app-step="magnifier"] [role="status"]')).toHaveAttribute('aria-live', 'polite');
+    await firstCard.getByRole('radio', { name: /30°C의 약한/ }).check();
+    await firstCard.getByRole('button', { name: '뜻 확인' }).click();
+
+    const noBleachCard = page.locator('.care-symbol-card');
+    await noBleachCard.getByRole('radio', { name: /산소계 표백/ }).check();
+    await noBleachCard.getByRole('button', { name: '뜻 확인' }).click();
+    await expectStatus(page, '[data-app-step="magnifier"]', /아직 맞지 않아요.*삼각형 안의 엑스.*다른 뜻/);
+    await expect(page.locator('[data-app-step="magnifier"] [role="status"]')).not.toContainText('온도와 줄');
+  });
+
   test('advances the first mission with the real keyboard tab order only', async ({ page }) => {
     await page.goto('./');
     await tabTo(page, '.mission-card', 0);
@@ -97,11 +116,15 @@ test.describe('classroom accessibility', () => {
     expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
     await expectNamedControls(page, 'checkbox');
     await expectStatus(page, '[data-app-step="plan"]', /단계가 배치/);
-    for (const [optionId, placement] of [
+    await expect(page.locator('.stage-option-hint')).toHaveAttribute('aria-live', 'polite');
+    await expect(page.locator('[data-care-option-id]')).toHaveCount(3);
+    for (const [stageIndex, [optionId, placement]] of [
       ['plan-wash-gentle-30', '세탁 단계에 놓기'],
       ['plan-dry-tumble-low', '건조 단계에 놓기'],
       ['plan-iron-none', '다림질 단계에 놓기'],
-    ] as const) {
+    ].entries()) {
+      await tabTo(page, '.plan-stage-nav-button', stageIndex);
+      await page.keyboard.press('Enter');
       await tabTo(page, `[data-care-option-id="${optionId}"]`);
       await expect(page.locator(`[data-care-option-id="${optionId}"]`)).toBeFocused();
       await page.keyboard.press('Enter');

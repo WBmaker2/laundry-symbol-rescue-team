@@ -28,6 +28,16 @@ describe('업데이트 내역', () => {
       category: '접근성',
       summary: '학습 흐름 포커스·학생용 보고서·반응형 CTA 개선',
     });
+    expect(updateHistory).toContainEqual({
+      date: '2026-08-29',
+      category: '개발',
+      summary: '학습 단계별 화면 계층·기호 전환 포커스·결과 요약 개선',
+    });
+    expect(updateHistory).toContainEqual({
+      date: '2026-08-31',
+      category: '접근성',
+      summary: '표시별 오답 단서와 단계별 관리 카드 보기 개선',
+    });
     const keys = updateHistory.map(({ date, category }) => `${date}:${category}`);
     expect(new Set(keys).size).toBe(keys.length);
   });

@@ -47,6 +47,20 @@ describe('Task 9 접근 가능한 관리 순서판', () => {
     await user.click(directPlacement);
     expect(screen.getByRole('region', { name: '현재 관리 계획' })).toHaveTextContent(/세탁.*부드러운/);
   });
+  it('관리 단계 navigator가 현재 작업 단계와 완료 단계를 문자로 보여 준다', async () => {
+    const user = userEvent.setup();
+    renderAppAtStep({ missionId: 'basic-t-shirt', step: 'plan' });
+    expect(screen.getByRole('heading', { name: '관리 순서판' })).toHaveAttribute('data-step-heading', 'true');
+    expect(screen.getByText(/관리 방법 카드 하나를 고른 뒤/)).toBeInTheDocument();
+    const navigator = screen.getByRole('navigation', { name: '관리 단계' });
+    expect(navigator).toBeInTheDocument();
+    expect(navigator).toHaveTextContent('세탁');
+    expect(navigator).toHaveTextContent('건조');
+    expect(navigator).toHaveTextContent('다림질');
+    await user.click(screen.getByRole('button', { name: '건조 단계 보기' }));
+    expect(screen.getByRole('button', { name: '건조 단계 보기' })).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText('지금 살펴보는 단계: 건조')).toBeInTheDocument();
+  });
 
   it('단계가 비어 있으면 가장 앞선 단계 제목으로 초점을 이동한다', async () => {
     const user = userEvent.setup();

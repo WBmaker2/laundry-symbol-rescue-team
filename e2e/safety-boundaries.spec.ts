@@ -38,8 +38,10 @@ test('keeps a local-only, safety-bounded learner completion path', async ({ page
     ['plan-dry-tumble-low', '건조 단계에 놓기'],
     ['plan-iron-none', '다림질 단계에 놓기'],
   ] as const) {
+    const stageName = stageLabel.replace(' 단계에 놓기', '');
+    await page.getByRole('button', { name: `${stageName} 단계 보기` }).click();
     await page.locator(`[data-care-option-id="${optionId}"]`).click();
-    await page.getByRole('button', { name: `선택한 카드 ${stageLabel.replace(' 단계에 놓기', '')} 단계에 놓기` }).click();
+    await page.getByRole('button', { name: `선택한 카드 ${stageName} 단계에 놓기` }).click();
   }
   for (const id of ['care-no-bleach', 'care-tumble-low']) {
     await page.locator(`input[data-restriction-id="${id}"]`).check();

@@ -1,18 +1,20 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import type { CareSymbol } from '../../domain/careTypes';
 import { evaluateInterpretation } from '../../domain/evaluateInterpretation';
 import type { InterpretationFeedback } from '../../domain/evaluationTypes';
 import type { SymbolInterpretationAttempt } from '../../domain/sessionReducer';
 import { SymbolFigure } from '../../components/ui/SymbolFigure';
 import { ActionButton } from '../../components/ui/ActionButton';
+import { learnerCopy } from '../../content/learnerCopy';
 
 export interface CareSymbolCardProps {
   symbol: CareSymbol;
   attempt?: SymbolInterpretationAttempt | undefined;
   onChoose: (attempt: SymbolInterpretationAttempt, feedback: InterpretationFeedback) => void;
+  headingRef?: RefObject<HTMLHeadingElement | null>;
 }
 
-export function CareSymbolCard({ symbol, attempt, onChoose }: CareSymbolCardProps) {
+export function CareSymbolCard({ symbol, attempt, onChoose, headingRef }: CareSymbolCardProps) {
   const [selectedMeaningOptionId, setSelectedMeaningOptionId] = useState(
     attempt?.selectedMeaningOptionId ?? '',
   );
@@ -43,11 +45,11 @@ export function CareSymbolCard({ symbol, attempt, onChoose }: CareSymbolCardProp
     <article
       className="care-symbol-card"
       data-symbol-id={symbol.id}
-      aria-label={`${symbol.name} 표시. ${symbol.shortDescription} 현재 계획에서 허용 범위를 확인하는 표시예요.`}
+      aria-label={`${symbol.name} 표시. ${symbol.shortDescription} 현재 계획에서 ${learnerCopy.allowedRange}을 확인하는 표시예요.`}
     >
       <div className="symbol-card-heading">
         <p className="eyebrow">현재 살펴볼 표시</p>
-        <h2 id={`symbol-card-title-${symbol.id}`}>{symbol.name}</h2>
+        <h2 ref={headingRef} id={`symbol-card-title-${symbol.id}`} tabIndex={-1}>{symbol.name}</h2>
       </div>
       <SymbolFigure symbol={symbol} expanded={expanded} descriptionRef={descriptionRef} />
       <button

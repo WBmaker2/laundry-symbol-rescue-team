@@ -47,7 +47,7 @@ describe('Task 7 앱 시작 흐름', () => {
     if (!list) throw new Error('진행 목록이 없습니다.');
     expect(list.querySelectorAll('li')).toHaveLength(7);
     expect(screen.getByText('구조 요청')).toHaveAttribute('aria-current', 'step');
-    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(screen.getByRole('link', { name: '본문으로 건너뛰기' })).toHaveAttribute('href', '#main-content');
   });
   it('고대비는 wrapper의 앱 메모리 상태만 바꾸고 aria-pressed를 갱신한다', async () => {
     const user = userEvent.setup();
@@ -204,7 +204,7 @@ describe('Task 8 표시 확대경과 접근 가능한 뜻 해석', () => {
     await user.click(wrongRadio);
     expect(wrongRadio).toBeChecked();
     await user.click(screen.getByRole('button', { name: '뜻 확인' }));
-    expect(screen.getByRole('status')).toHaveTextContent(/기호 옆 설명에서 온도와 줄 표시를 다시 찾아보세요/);
+    expect(screen.getByRole('status')).toHaveTextContent(/아직 맞지 않아요.*숫자 30.*한 줄.*다른 뜻/);
     const description = screen.getByTestId('symbol-description');
     expect(description).toHaveAttribute('tabindex', '-1');
     expect(document.activeElement).toBe(description);

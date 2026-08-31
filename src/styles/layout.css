@@ -329,7 +329,7 @@
 .interpretation-feedback {
   margin: 0;
   padding: 0.75rem;
-  border-left: 4px solid var(--color-accent);
+  border: 1px solid rgb(231 120 85 / 40%);
   background: rgb(231 120 85 / 10%);
 }
 
@@ -399,7 +399,7 @@
 .safety-notice {
   margin-top: 1.25rem;
   padding: 0.9rem 1rem;
-  border-left: 0.35rem solid var(--color-accent);
+  border: 1px solid rgb(231 120 85 / 40%);
   background: rgb(231 120 85 / 10%);
 }
 

@@ -5,6 +5,13 @@ import { renderAppAtStep } from './renderApp';
 afterEach(() => cleanup());
 
 describe('Task 11 단계별 가상 가능성', () => {
+  it('가상 결과 상단에서 세 단계의 상태를 한눈에 요약한다', () => {
+    const result = renderAppAtStep({ missionId: 'decorated-top', step: 'simulation', scenario: 'outside-limits' });
+    expect(result.getByRole('region', { name: '결과 한눈에 보기' })).toHaveTextContent('세탁');
+    expect(result.getByRole('region', { name: '결과 한눈에 보기' })).toHaveTextContent(/살펴볼 필요|가능성/);
+    result.unmount();
+  });
+
   it('does not show risk wording for allowed basic-t-shirt stages', () => {
     const result = renderAppAtStep({ missionId: 'basic-t-shirt', step: 'simulation', scenario: 'within-limits' });
     for (const stage of ['wash', 'dry', 'iron']) {

@@ -1,13 +1,18 @@
 import { missions } from '../../content/missions';
 import type { MissionId } from '../../domain/missionTypes';
 import { SafetyNotice } from '../../components/ui/SafetyNotice';
+import { StepIntro } from '../../components/ui/StepIntro';
 
 export function MissionPicker({ onSelect }: { onSelect: (missionId: MissionId) => void }) {
   return (
     <section className="mission-picker" aria-labelledby="mission-picker-title">
-      <p className="eyebrow">첫 번째 단계</p>
-      <h2 id="mission-picker-title" data-step-heading="true" tabIndex={-1}>구조할 가상 옷을 골라 보세요</h2>
-      <p>가상 옷의 재료와 취급 표시를 읽고 관리 순서를 정하는 활동이에요.</p>
+      <StepIntro
+        eyebrow="첫 번째 단계"
+        title="구조할 가상 옷을 골라 보세요"
+        titleId="mission-picker-title"
+        description="가상 옷의 재료와 취급 표시를 읽고 관리 순서를 정하는 활동이에요."
+        nextActionLabel="미션 카드 하나를 골라 시작해요."
+      />
       <div className="mission-grid">
         {missions.map((mission) => (
           <article key={mission.id} data-mission-id={mission.id}>
@@ -24,7 +29,7 @@ export function MissionPicker({ onSelect }: { onSelect: (missionId: MissionId) =
           </article>
         ))}
       </div>
-      <SafetyNotice />
+      <SafetyNotice variant="compact" />
     </section>
   );
 }
