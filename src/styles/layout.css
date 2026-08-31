@@ -474,4 +474,13 @@
   .garment-card {
     grid-template-columns: 1fr;
   }
+
+  .garment-facts {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .garment-facts dd {
+    margin-bottom: 0.55rem;
+  }
 }

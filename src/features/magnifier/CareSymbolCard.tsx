@@ -45,7 +45,7 @@ export function CareSymbolCard({ symbol, attempt, onChoose, headingRef }: CareSy
     <article
       className="care-symbol-card"
       data-symbol-id={symbol.id}
-      aria-label={`${symbol.name} 표시. ${symbol.shortDescription} 현재 계획에서 ${learnerCopy.allowedRange}을 확인하는 표시예요.`}
+      aria-label={`${symbol.name} 표시. ${symbol.shortDescription} 현재 계획에서 허용 범위를 확인하고 ${learnerCopy.allowedRange}을 찾아요.`}
     >
       <div className="symbol-card-heading">
         <p className="eyebrow">현재 살펴볼 표시</p>

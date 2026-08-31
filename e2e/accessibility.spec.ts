@@ -46,7 +46,7 @@ test.describe('classroom accessibility', () => {
   test('exposes progress, pressed controls, native choices, and computed symbol context', async ({ page }) => {
     await page.goto('./');
     await expect(page.getByRole('navigation', { name: '학습 진행 7단계' })).toBeVisible();
-    await expect(page.locator('[aria-current="step"]')).toHaveCount(1);
+    await expect(page.locator('.progress-list [aria-current="step"]')).toHaveCount(1);
     await expect(page.getByRole('button', { name: '고대비 모드' })).toHaveAttribute('aria-pressed', 'false');
     await page.getByRole('button', { name: /기본 티셔츠의 세탁/ }).click();
     await page.getByRole('button', { name: '표시 확대' }).click();
@@ -110,7 +110,7 @@ test.describe('classroom accessibility', () => {
       await page.keyboard.press('Enter');
     }
 
-    await expect(page.locator('[aria-current="step"]')).toContainText('관리 순서판');
+    await expect(page.locator('.progress-list [aria-current="step"]')).toContainText('관리 순서판');
     await expect(page.locator('[data-app-step="plan"]')).toBeVisible();
     await expect(page.locator('[data-app-step="plan"] [data-step-heading="true"]')).toBeFocused();
     expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
@@ -140,7 +140,7 @@ test.describe('classroom accessibility', () => {
     await expect(page.getByRole('button', { name: '관리 계획 확인' })).toBeFocused();
     await page.keyboard.press('Enter');
 
-    await expect(page.locator('[aria-current="step"]')).toContainText('손상 예보');
+    await expect(page.locator('.progress-list [aria-current="step"]')).toContainText('손상 예보');
     await expect(page.locator('section.forecast-screen')).toBeVisible();
     await expect(page.locator('[data-app-step="forecast"] [data-step-heading="true"]')).toBeFocused();
     await tabTo(page, 'input[data-risk-selection-id="shrinkage"]');
@@ -157,12 +157,12 @@ test.describe('classroom accessibility', () => {
     await tabTo(page, '[data-app-step="forecast"] .simulation-action:not([disabled])');
     await page.keyboard.press('Enter');
 
-    await expect(page.locator('[aria-current="step"]')).toContainText('가상 관리');
+    await expect(page.locator('.progress-list [aria-current="step"]')).toContainText('가상 관리');
     await expect(page.locator('section.virtual-care-screen')).toBeVisible();
     await expect(page.locator('[data-app-step="simulation"] [data-step-heading="true"]')).toBeFocused();
     await tabTo(page, 'section.virtual-care-screen .simulation-action');
     await page.keyboard.press('Enter');
-    await expect(page.locator('[aria-current="step"]')).toContainText('계획 수정');
+    await expect(page.locator('.progress-list [aria-current="step"]')).toContainText('계획 수정');
     await expect(page.locator('section.revision-screen')).toBeVisible();
     await expect(page.locator('[data-app-step="revision"] [data-step-heading="true"]')).toBeFocused();
     await expectStatus(page, '[data-app-step="revision"]', /예측|가능성/);
@@ -175,7 +175,7 @@ test.describe('classroom accessibility', () => {
     await page.keyboard.press('Space');
     await tabTo(page, '[data-app-step="revision"] .management-board .primary-action');
     await page.keyboard.press('Enter');
-    await expect(page.locator('[aria-current="step"]')).toContainText('구조 보고서');
+    await expect(page.locator('.progress-list [aria-current="step"]')).toContainText('구조 보고서');
     await expect(page.getByRole('heading', { name: '구조 보고서' })).toBeVisible();
     await expect(page.locator('[data-app-step="report"] [data-step-heading="true"]')).toBeFocused();
   });
